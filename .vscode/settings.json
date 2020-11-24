@@ -1,0 +1,10 @@
+{
+    "editor.formatOnSave": true,
+    "rust-client.engine": "rust-analyzer",
+    "shaderc-lint.additionalFileExtensions": [
+        ".vert",
+        ".frag"
+    ],
+    "shaderc-lint.glslcPath": "L:\\Portable Programs\\path_programs\\shaderc\\bin\\glslc.exe",
+    "shaderc-lint.buildOnSave": true,
+}
