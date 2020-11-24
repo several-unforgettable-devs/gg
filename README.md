@@ -66,6 +66,9 @@ Good to use if you've never worked in rust.
 ### Contributing
 
 - Add yourself to the author section in Cargo.toml.
+- Write your entry on the same line as the previous, and save.
+  - It should automatically format the file!
+  (If it doesn't the formatter isn't set up, please ask for help.)
 
 ``` zsh
 git add Cargo.toml
