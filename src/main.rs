@@ -13,9 +13,9 @@ fn main() {
 fn player_control_update(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&PlayerControl, &mut Transform)>,
+    mut query: Query<(&PlayerControl, &mut Transform, &mut  Velocity)>,
 ) {
-    for (_, mut transform) in query.iter_mut() {
+    for (_, mut transform, mut _velocity) in query.iter_mut() {
         let mut direction = 0.0;
 
         if keyboard_input.pressed(KeyCode::A) {
@@ -35,6 +35,10 @@ fn player_control_update(
         *transform.translation.z_mut() = new_z;
     }
 }
+#[derive(Debug, Default, PartialEq, Clone, Copy, Properties)]
+struct Velocity{
+    pub velocity: Vec3,
+}
 
 struct PlayerControl;
 
@@ -44,13 +48,13 @@ fn add_tank(
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
     commands
-        // Plane
         .spawn(PbrComponents {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
             material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
             transform: Transform::from_translation(Vec3::new(4., 0., 4.)),
             ..Default::default()
         })
+        .with(Velocity::default())
         .with(PlayerControl);
 }
 
@@ -60,7 +64,6 @@ fn add_earth(
     materials: &mut ResMut<Assets<StandardMaterial>>
 ) {
     commands
-        // Plane
         .spawn(PbrComponents {
             mesh: meshes.add(Mesh::from(shape::Icosphere { radius: 2.0, ..Default::default() })),
             material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
