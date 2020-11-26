@@ -6,6 +6,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup.system())
         .add_system(player_control_update.system())
+        .add_system(velocity_update.system())
         .run();
 }
 
@@ -38,6 +39,17 @@ fn player_control_update(
 #[derive(Debug, Default, PartialEq, Clone, Copy, Properties)]
 struct Velocity{
     pub velocity: Vec3,
+}
+
+fn velocity_update(
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &mut  Velocity)>,
+) {
+    for (mut transform, mut velocity) in query.iter_mut() {
+        let displacement = velocity.velocity * time.delta_seconds;
+        transform.translation += displacement;
+        velocity.velocity = Vec3::zero();
+    }
 }
 
 struct PlayerControl;
