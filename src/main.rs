@@ -8,6 +8,7 @@ fn main() {
         .add_startup_system(setup.system())
         .add_system(player_control_update.system())
         .add_system(test_end_condition.system())
+        .add_system(velocity_update.system())
         .run();
 }
 
@@ -25,30 +26,38 @@ fn player_control_update(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&PlayerControl, &mut Transform, &mut  Velocity)>,
 ) {
-    for (_, mut transform, mut _velocity) in query.iter_mut() {
-        let mut direction = 0.0;
+    for (_, transform, mut velocity) in query.iter_mut() {
 
-        if keyboard_input.pressed(KeyCode::A) {
-            direction -= 1.0;
+        let quat = transform.rotation;
+        let rotation_mat = Mat3::from_quat(quat);
+        let forward = rotation_mat.x_axis();
+
+        let mut acceleration = 0.0;
+        if keyboard_input.pressed(KeyCode::W) {
+            acceleration += 1.0;
+        }
+        if keyboard_input.pressed(KeyCode::S) {
+            acceleration -= 1.0;
         }
 
-        if keyboard_input.pressed(KeyCode::D) {
-            direction += 1.0;
-        }
-
-        // move the paddle horizontally
-        let new_z = transform.translation.z() + (time.delta_seconds * direction * 10.0);
-
-        // bound the paddle within the walls
-        let new_z = new_z.min(380.0).max(-380.0);
-
-        *transform.translation.z_mut() = new_z;
+        let delta_v = forward * acceleration * time.delta_seconds;
+        velocity.velocity += delta_v;
     }
 }
 
 #[derive(Debug, Default, PartialEq, Clone, Copy, Properties)]
 struct Velocity{
     pub velocity: Vec3,
+}
+
+fn velocity_update(
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &mut  Velocity)>,
+) {
+    for (mut transform, velocity) in query.iter_mut() {
+        let displacement = velocity.velocity * time.delta_seconds;
+        transform.translation += displacement;
+    }
 }
 
 struct PlayerControl;
@@ -71,7 +80,18 @@ fn add_ship(
             ..Default::default()
         })
         .with(Velocity::default())
-        .with(PlayerControl);
+        .with(PlayerControl)
+        .with_children(|parent| {
+
+            // Camera
+            parent.spawn(Camera3dComponents {
+                transform: Transform::from_matrix(Mat4::from_rotation_translation(
+                    Quat::from_xyzw(-0.3, -0.5, -0.3, 0.5).normalize(),
+                    Vec3::new(-7.0, 20.0, 4.0),
+                )),
+                ..Default::default()
+            });
+        });
 }
 
 fn add_earth(
