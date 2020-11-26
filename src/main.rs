@@ -10,7 +10,8 @@ fn main() {
 }
 
 
-fn player_control_update( time: Res<Time>,
+fn player_control_update(
+    time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&PlayerControl, &mut Transform)>,
 ) {
@@ -37,9 +38,10 @@ fn player_control_update( time: Res<Time>,
 
 struct PlayerControl;
 
-fn add_tank(mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+fn add_tank(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
 ) {
     commands
         // Plane
@@ -50,6 +52,21 @@ fn add_tank(mut commands: Commands,
             ..Default::default()
         })
         .with(PlayerControl);
+}
+
+fn add_earth(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>
+) {
+    commands
+        // Plane
+        .spawn(PbrComponents {
+            mesh: meshes.add(Mesh::from(shape::Icosphere { radius: 2.0, ..Default::default() })),
+            material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
+            transform: Transform::from_translation(Vec3::new(0., 0., 0.)),
+            ..Default::default()
+        });
 }
 
 fn setup(
@@ -72,5 +89,6 @@ fn setup(
             ..Default::default()
         });
 
-    add_tank(commands, meshes, materials);
+    add_tank(&mut commands, &mut meshes, &mut materials);
+    add_earth(&mut commands, &mut meshes, &mut materials);
 }
