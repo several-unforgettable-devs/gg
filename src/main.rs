@@ -2,6 +2,7 @@ use bevy::{
     prelude::*,
     render::camera::PerspectiveProjection,
 };
+use rand::Rng;
 
 mod debug;
 use debug::{change_text_system, infotext_system};
