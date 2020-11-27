@@ -94,8 +94,9 @@ fn add_ship(
             transform: Transform::from_translation(position),
             ..Default::default()
         })
-        .with(Velocity::default())
         .with(PlayerControl)
+        .with(Gravity { mass: 1. })
+        .with(Velocity::default())
         .with_children(|parent| {
             // Camera
             parent.spawn(Camera3dComponents {
@@ -124,7 +125,9 @@ fn add_earth(
             transform: Transform::from_translation(position),
             ..Default::default()
         })
-        .with(EarthMarker);
+        .with(EarthMarker)
+        .with(Gravity { mass: 10. })
+        .with(Velocity::default());
 }
 
 fn add_asteroids(
@@ -161,15 +164,18 @@ fn add_asteroids(
                 - asteroid_max_spawn_radius,
         );
         asteroid_position += asteroid_offset;
-        commands.spawn(PbrComponents {
-            mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius),
-                subdivisions: 4,
-            })),
-            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
-            transform: Transform::from_translation(asteroid_position),
-            ..Default::default()
-        });
+        commands
+            .spawn(PbrComponents {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius),
+                    subdivisions: 4,
+                })),
+                material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
+                transform: Transform::from_translation(asteroid_position),
+                ..Default::default()
+            })
+            .with(Gravity { mass: 1. })
+            .with(Velocity::default());
     }
 }
 
