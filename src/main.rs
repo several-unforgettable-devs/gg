@@ -59,30 +59,32 @@ fn mouse_input_update(
     mut state: Local<MouseState>,
     mouse_motion_events: Res<Events<MouseMotion>>,
     mut camera_query: Query<(&CameraState, &mut Transform)>,
-    player_query: Query<(&PlayerControl, &Transform)>,
+    mut player_query: Query<(&PlayerControl, &mut Transform)>,
 ) {
-    for (_, player_transform) in player_query.iter() {
+    for (_, mut player_transform) in player_query.iter_mut() {
         for (_, mut camera_transform) in camera_query.iter_mut() {
             camera_transform.translation = Vec3::zero();
 
-            let quat = camera_transform.rotation;
+            let quat = player_transform.rotation;
             let rotation_mat = Mat3::from_quat(quat);
 
             let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
 
             for MouseMotion { delta } in mouse_motion_events {
-                let roll_magnitude = -ROTATION_RATE * delta.y;
+                let yaw_magnitude = -ROTATION_RATE * delta.y;
                 let pitch_magnitude = -ROTATION_RATE * delta.x;
 
+                let yaw = Quat::from_axis_angle(rotation_mat.z_axis, yaw_magnitude);
                 let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
-                let roll = Quat::from_axis_angle(rotation_mat.x_axis, roll_magnitude);
 
-                camera_transform.rotation = pitch * roll * camera_transform.rotation;
-                camera_transform.rotation = camera_transform.rotation.normalize();
+                player_transform.rotation = yaw * pitch * player_transform.rotation;
+                player_transform.rotation = player_transform.rotation.normalize();
             }
 
-            camera_transform.translation =
-                player_transform.translation + camera_transform.forward() * 10.0;
+            camera_transform.rotation = player_transform.rotation;
+
+            let forward = player_transform.forward();
+            camera_transform.translation = player_transform.translation + forward * 10.0;
         }
     }
 }
@@ -111,11 +113,11 @@ fn player_control_update(
 
         let mut acceleration = 0.0;
         if keyboard_input.pressed(KeyCode::W) {
-            acceleration += 1.0;
+            acceleration += 10.0;
         }
 
         if keyboard_input.pressed(KeyCode::S) {
-            acceleration -= 1.0;
+            acceleration -= 10.0;
         }
 
         let delta_v = forward * acceleration * time.delta_seconds;
