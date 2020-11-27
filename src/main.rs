@@ -3,6 +3,11 @@ use rand::Rng;
 
 use bevy::input::mouse::MouseMotion;
 
+mod gravity;
+use crate::gravity::*;
+mod velocity;
+use crate::velocity::*;
+
 fn main() {
     App::build()
         .add_resource(Msaa { samples: 4 })
@@ -12,6 +17,7 @@ fn main() {
         .add_system(player_control_update.system())
         .add_system(test_end_condition.system())
         .add_system(velocity_update.system())
+        .add_system(gravity_update.system())
         .run();
 }
 
@@ -71,18 +77,6 @@ fn player_control_update(
     }
 }
 
-#[derive(Debug, Default, PartialEq, Clone, Copy, Properties)]
-struct Velocity {
-    pub velocity: Vec3,
-}
-
-fn velocity_update(time: Res<Time>, mut query: Query<(&mut Transform, &mut Velocity)>) {
-    for (mut transform, velocity) in query.iter_mut() {
-        let displacement = velocity.velocity * time.delta_seconds;
-        transform.translation += displacement;
-    }
-}
-
 struct PlayerControl;
 
 struct EarthMarker;
@@ -100,8 +94,9 @@ fn add_ship(
             transform: Transform::from_translation(position),
             ..Default::default()
         })
-        .with(Velocity::default())
         .with(PlayerControl)
+        .with(Gravity { mass: 1. })
+        .with(Velocity::default())
         .with_children(|parent| {
             // Camera
             parent.spawn(Camera3dComponents {
@@ -130,7 +125,9 @@ fn add_earth(
             transform: Transform::from_translation(position),
             ..Default::default()
         })
-        .with(EarthMarker);
+        .with(EarthMarker)
+        .with(Gravity { mass: 10. })
+        .with(Velocity::default());
 }
 
 fn add_asteroids(
@@ -167,15 +164,18 @@ fn add_asteroids(
                 - asteroid_max_spawn_radius,
         );
         asteroid_position += asteroid_offset;
-        commands.spawn(PbrComponents {
-            mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius),
-                subdivisions: 4,
-            })),
-            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
-            transform: Transform::from_translation(asteroid_position),
-            ..Default::default()
-        });
+        commands
+            .spawn(PbrComponents {
+                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius),
+                    subdivisions: 4,
+                })),
+                material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
+                transform: Transform::from_translation(asteroid_position),
+                ..Default::default()
+            })
+            .with(Gravity { mass: 1. })
+            .with(Velocity::default());
     }
 }
 
