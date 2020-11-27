@@ -8,7 +8,8 @@ authors = [
 ]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.dev.package.'*']
+opt-level = 3
 
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy.git", rev = "f69cc6f94c9df675457b56297d582c16b5d37cef" }
