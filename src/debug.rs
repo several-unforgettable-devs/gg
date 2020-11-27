@@ -20,7 +20,7 @@ pub fn infotext_system(commands: &mut Commands, asset_server: Res<AssetServer>) 
             value: "This is\ntext with\nline breaks\nin the top left".to_string(),
             font: font.clone(),
             style: TextStyle {
-                font_size: 50.0,
+                font_size: 14.0,
                 color: Color::WHITE,
                 alignment: TextAlignment::default(),
             },
@@ -47,7 +47,7 @@ pub fn infotext_system(commands: &mut Commands, asset_server: Res<AssetServer>) 
                 .to_string(),
             font: font.clone(),
             style: TextStyle {
-                font_size: 50.0,
+                font_size: 14.0,
                 color: Color::rgb(0.8, 0.2, 0.7),
                 alignment: TextAlignment {
                     horizontal: HorizontalAlign::Center,
@@ -74,7 +74,7 @@ pub fn infotext_system(commands: &mut Commands, asset_server: Res<AssetServer>) 
                 value: "This text changes in the bottom right".to_string(),
                 font: font.clone(),
                 style: TextStyle {
-                    font_size: 50.0,
+                    font_size: 14.0,
                     color: Color::WHITE,
                     alignment: TextAlignment::default(),
                 },
@@ -102,7 +102,7 @@ pub fn infotext_system(commands: &mut Commands, asset_server: Res<AssetServer>) 
                 .to_string(),
             font,
             style: TextStyle {
-                font_size: 50.0,
+                font_size: 14.0,
                 color: Color::WHITE,
                 alignment: TextAlignment::default(),
             },
