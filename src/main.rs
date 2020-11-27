@@ -13,11 +13,11 @@ fn main() {
         .add_resource(Msaa { samples: 4 })
         .add_resource(GameState::Running)
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup.system())
-        .add_system(player_control_update.system())
-        .add_system(test_end_condition.system())
-        .add_system(velocity_update.system())
-        .add_system(gravity_update.system())
+        .add_startup_system(setup)
+        .add_system(player_control_update)
+        .add_system(test_end_condition)
+        .add_system(velocity_update)
+        .add_system(gravity_update)
         .run();
 }
 
@@ -47,7 +47,7 @@ fn player_control_update(
     for (_, mut transform, mut velocity) in query.iter_mut() {
         let quat = transform.rotation;
         let rotation_mat = Mat3::from_quat(quat);
-        let forward = rotation_mat.x_axis();
+        let forward = rotation_mat.x_axis;
 
         let mut acceleration = 0.0;
         if keyboard_input.pressed(KeyCode::W) {
@@ -65,11 +65,11 @@ fn player_control_update(
             .iter(&mouse_motion_events);
 
         for MouseMotion { delta } in mouse_motion_events {
-            let yaw_magnitude = -ROTATION_RATE * delta.y();
-            let pitch_magnitude = -ROTATION_RATE * delta.x();
+            let yaw_magnitude = -ROTATION_RATE * delta.y;
+            let pitch_magnitude = -ROTATION_RATE * delta.x;
 
-            let yaw = Quat::from_axis_angle(rotation_mat.z_axis(), yaw_magnitude);
-            let pitch = Quat::from_axis_angle(rotation_mat.y_axis(), pitch_magnitude);
+            let yaw = Quat::from_axis_angle(rotation_mat.z_axis, yaw_magnitude);
+            let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
 
             transform.rotation = yaw * pitch * transform.rotation;
             transform.rotation = transform.rotation.normalize();
@@ -88,7 +88,7 @@ fn add_ship(
     position: Vec3,
 ) {
     commands
-        .spawn(PbrComponents {
+        .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
             material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
             transform: Transform::from_translation(position),
@@ -99,7 +99,7 @@ fn add_ship(
         .with(Velocity::default())
         .with_children(|parent| {
             // Camera
-            parent.spawn(Camera3dComponents {
+            parent.spawn(Camera3dBundle {
                 transform: Transform::from_matrix(Mat4::from_rotation_translation(
                     Quat::from_xyzw(-0.3, -1.0, -0.3, 1.0).normalize(),
                     Vec3::new(-18.0, 20.0, 0.0),
@@ -116,7 +116,7 @@ fn add_earth(
     position: Vec3,
 ) {
     commands
-        .spawn(PbrComponents {
+        .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
                 radius: 2.0,
                 ..Default::default()
@@ -165,7 +165,7 @@ fn add_asteroids(
         );
         asteroid_position += asteroid_offset;
         commands
-            .spawn(PbrComponents {
+            .spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
                     radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius),
                     subdivisions: 4,
@@ -180,30 +180,32 @@ fn add_asteroids(
 }
 
 fn setup(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands
         // Light
-        .spawn(LightComponents {
+        .spawn(LightBundle {
             transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
             ..Default::default()
         });
 
     add_ship(
-        &mut commands,
+        commands,
         &mut meshes,
         &mut materials,
         Vec3::new(-40.0, 0., 0.0),
     );
+
     add_earth(
-        &mut commands,
+        commands,
         &mut meshes,
         &mut materials,
         Vec3::new(0.0, 0.0, 0.0),
     );
-    add_asteroids(&mut commands, &mut meshes, &mut materials);
+
+    add_asteroids(commands, &mut meshes, &mut materials);
 }
 
 fn calc_dist_sq(pos1: Vec3, pos2: Vec3) -> f32 {

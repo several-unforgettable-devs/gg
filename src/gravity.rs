@@ -19,27 +19,18 @@ pub const MIN_GRAVITATION_DISTANCE_SQUARED: f32 =
 
 pub fn gravity_update(
     time: Res<Time>,
-    mut query: Query<(Entity, &Transform, &mut Velocity, &Gravity)>
+    mut query: Query<(Entity, &Transform, &mut Velocity, &Gravity)>,
 ) {
-    let objects: Vec<(Entity, Vec3, Gravity)> = query.iter_mut().map(|(e, t, _, g)| {
-        (e, t.translation, *g)
-    }).collect();
-    for (
-        e1,
-        p1,
-        Gravity { mass: m1 },
-    ) in objects.iter()
-    {
+    let objects: Vec<(Entity, Vec3, Gravity)> = query
+        .iter_mut()
+        .map(|(e, t, _, g)| (e, t.translation, *g))
+        .collect();
+    for (e1, p1, Gravity { mass: m1 }) in objects.iter() {
         // Pre-multiply everything that does not depend on the second object,
         // to avoid some work in the inner loop
         let premultiplied_factor = GRAVITATIONAL_CONSTANT * m1 * time.delta_seconds;
 
-        for (
-            e2,
-            p2,
-            _,
-        ) in objects.iter()
-        {
+        for (e2, p2, _) in objects.iter() {
             if e2 == e1 {
                 continue;
             }
@@ -56,7 +47,7 @@ pub fn gravity_update(
                     let direction = displacement * dist_recip;
                     let delta_v = change_in_speed * direction;
                     (*v2).velocity += delta_v;
-                },
+                }
                 _ => (),
             }
         }
