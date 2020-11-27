@@ -3,6 +3,9 @@ use rand::Rng;
 
 use bevy::input::mouse::MouseMotion;
 
+mod velocity;
+use crate::velocity::*;
+
 fn main() {
     App::build()
         .add_resource(Msaa { samples: 4 })
@@ -68,18 +71,6 @@ fn player_control_update(
             transform.rotation = yaw * pitch * transform.rotation;
             transform.rotation = transform.rotation.normalize();
         }
-    }
-}
-
-#[derive(Debug, Default, PartialEq, Clone, Copy, Properties)]
-struct Velocity {
-    pub velocity: Vec3,
-}
-
-fn velocity_update(time: Res<Time>, mut query: Query<(&mut Transform, &mut Velocity)>) {
-    for (mut transform, velocity) in query.iter_mut() {
-        let displacement = velocity.velocity * time.delta_seconds;
-        transform.translation += displacement;
     }
 }
 
