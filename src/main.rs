@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use bevy::input::mouse::{MouseMotion};
+
 fn main() {
     App::build()
         .add_resource(Msaa { samples: 4 })
@@ -21,12 +23,21 @@ enum GameState {
     Won
 }
 
+#[derive(Default)]
+struct PlayerInputState {
+    mouse_motion_event_reader: EventReader<MouseMotion>,
+}
+
+const ROTATION_RATE: f32 = 0.002;
+
 fn player_control_update(
+    mut input_state: Local<PlayerInputState>,
+    mouse_motion_events: Res<Events<MouseMotion>>,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&PlayerControl, &mut Transform, &mut  Velocity)>,
 ) {
-    for (_, transform, mut velocity) in query.iter_mut() {
+    for (_, mut transform, mut velocity) in query.iter_mut() {
 
         let quat = transform.rotation;
         let rotation_mat = Mat3::from_quat(quat);
@@ -42,6 +53,20 @@ fn player_control_update(
 
         let delta_v = forward * acceleration * time.delta_seconds;
         velocity.velocity += delta_v;
+
+        let mouse_motion_events =
+            input_state.mouse_motion_event_reader.iter(&mouse_motion_events);
+
+        for MouseMotion{delta} in mouse_motion_events {
+            let yaw_magnitude = -ROTATION_RATE * delta.y();
+            let pitch_magnitude = -ROTATION_RATE * delta.x();
+
+            let yaw = Quat::from_axis_angle(rotation_mat.z_axis(), yaw_magnitude);
+            let pitch = Quat::from_axis_angle(rotation_mat.y_axis(), pitch_magnitude);
+
+            transform.rotation = yaw * pitch * transform.rotation;
+            transform.rotation = transform.rotation.normalize();
+        }
     }
 }
 
