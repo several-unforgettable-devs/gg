@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use rand::Rng;
 
 fn main() {
     App::build()
@@ -110,6 +111,44 @@ fn add_earth(
         .with(EarthMarker);
 }
 
+fn add_asteroids(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>
+) {
+    let mut rng = rand::thread_rng();
+
+    let asteroid_density = 30.0;
+    let asteroid_max_spacing = 0.7;
+    let asteroid_max_spawn_distance = 150.0;
+    let asteroid_min_radius = 0.9;
+    let asteroid_max_radius = 3.0;
+
+    let asteroids_per_axis: i32 = (asteroid_max_spawn_distance / asteroid_density) as i32;
+    let total_asteroids = asteroids_per_axis.pow(3);
+    let asteroid_max_spawn_radius = asteroid_max_spawn_distance / 2.0;
+
+    let asteroid_min_offset = -asteroid_max_spacing * asteroid_density / 2.0;
+    let asteroid_max_offset = asteroid_max_spacing * asteroid_density / 2.0;
+
+    for x in 0..total_asteroids {
+        let asteroid_offset = Vec3::new(rng.gen_range(asteroid_min_offset, asteroid_max_offset),
+            rng.gen_range(asteroid_min_offset, asteroid_max_offset),
+            rng.gen_range(asteroid_min_offset, asteroid_max_offset));
+        let mut asteroid_position = Vec3::new((x % asteroids_per_axis) as f32 * asteroid_density - asteroid_max_spawn_radius,
+            ((x / asteroids_per_axis) % asteroids_per_axis) as f32 * asteroid_density - asteroid_max_spawn_radius,
+            ((x / asteroids_per_axis.pow(2)) % asteroids_per_axis) as f32 * asteroid_density - asteroid_max_spawn_radius);
+        asteroid_position += asteroid_offset;
+        commands
+        .spawn(PbrComponents {
+            mesh: meshes.add(Mesh::from(shape::Icosphere { radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius), subdivisions: 4 })),
+            material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
+            transform: Transform::from_translation(asteroid_position),
+            ..Default::default()
+        });
+    }
+}
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -123,9 +162,9 @@ fn setup(
             ..Default::default()
         });
 
-    add_ship(&mut commands, &mut meshes, &mut materials, Vec3::new(4.0, 0., 0.0));
-    add_earth(&mut commands, &mut meshes, &mut materials, Vec3::new(40.0, 0.0, 0.0));
-    
+    add_ship(&mut commands, &mut meshes, &mut materials, Vec3::new(-40.0, 0., 0.0));
+    add_earth(&mut commands, &mut meshes, &mut materials, Vec3::new(0.0, 0.0, 0.0));
+    add_asteroids(&mut commands, &mut meshes, &mut materials);
 }
 
 fn calc_dist_sq(pos1: Vec3,

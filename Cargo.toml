@@ -1,10 +1,15 @@
 [package]
 name = "gg"
 version = "0.1.0"
-authors = ["Zageron <hello@adambryant.ca>", "Aztek <andrew.cc.osborne@gmail.com>", "Rael <callum.mcrae5@gmail.com>"]
+authors = [
+    "Zageron <hello@adambryant.ca>",
+    "Aztek <andrew.cc.osborne@gmail.com>",
+    "Rael <callum.mcrae5@gmail.com>",
+]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bevy = "0.3.0"
+rand = "0.7.3"
