@@ -17,7 +17,7 @@ struct PlayerInputState {
     mouse_motion_event_reader: EventReader<MouseMotion>,
 }
 
-const ROTATION_RATE: f32 = 0.01;
+const ROTATION_RATE: f32 = 0.002;
 
 fn player_control_update(
     mut input_state: Local<PlayerInputState>,
