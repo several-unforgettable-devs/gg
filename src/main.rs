@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use bevy::input::mouse::{MouseMotion};
+
 fn main() {
     App::build()
         .add_resource(Msaa { samples: 4 })
@@ -10,8 +12,15 @@ fn main() {
         .run();
 }
 
+#[derive(Default)]
+struct PlayerInputState {
+    mouse_motion_event_reader: EventReader<MouseMotion>,
+}
+
 
 fn player_control_update(
+    mut input_state: Local<PlayerInputState>,
+    mouse_motion_events: Res<Events<MouseMotion>>,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&PlayerControl, &mut Transform, &mut  Velocity)>,
@@ -32,6 +41,9 @@ fn player_control_update(
 
         let delta_v = forward * acceleration * time.delta_seconds;
         velocity.velocity += delta_v;
+    }
+    for event in input_state.mouse_motion_event_reader.iter(&mouse_motion_events) {
+        println!("{:?}", event);
     }
 }
 #[derive(Debug, Default, PartialEq, Clone, Copy, Properties)]
