@@ -1,8 +1,7 @@
 use bevy::{
-    //input::gamepad::{Gamepad, GamepadButton, GamepadEvent, GamepadEventType},
     input::mouse::{MouseButtonInput, MouseMotion, MouseWheel},
     prelude::*,
-    //utils::HashSet,
+    render::camera::PerspectiveProjection,
 };
 
 use rand::Rng;
@@ -27,6 +26,7 @@ fn main() {
         .add_system(gravity_update)
         .add_system(change_text_system)
         .add_system(mouse_input_update)
+        .add_system(skybox_update)
         .run();
 }
 
@@ -40,11 +40,6 @@ enum GameState {
 }
 
 #[derive(Default)]
-struct PlayerInputState {
-    mouse_motion_event_reader: EventReader<MouseMotion>,
-}
-
-#[derive(Default)]
 struct MouseState {
     mouse_button_event_reader: EventReader<MouseButtonInput>,
     mouse_motion_event_reader: EventReader<MouseMotion>,
@@ -54,37 +49,56 @@ struct MouseState {
 
 struct CameraState;
 
+struct SkyboxState;
+
+struct PlayerControl;
+
 const ROTATION_RATE: f32 = 0.002;
 
 fn mouse_input_update(
     mut state: Local<MouseState>,
-    mouse_button_input_events: Res<Events<MouseButtonInput>>,
     mouse_motion_events: Res<Events<MouseMotion>>,
-    cursor_moved_events: Res<Events<CursorMoved>>,
-    mouse_wheel_events: Res<Events<MouseWheel>>,
-    mut query: Query<(&CameraState, &mut Transform)>,
+    mut camera_query: Query<(&CameraState, &mut Transform)>,
+    player_query: Query<(&PlayerControl, &Transform)>,
 ) {
-    for (cameraState, mut transform) in query.iter_mut() {
-        let quat = transform.rotation;
-        let rotation_mat = Mat3::from_quat(quat);
+    for (_, player_transform) in player_query.iter() {
+        for (_, mut camera_transform) in camera_query.iter_mut() {
+            camera_transform.translation = Vec3::zero();
 
-        let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
+            let quat = camera_transform.rotation;
+            let rotation_mat = Mat3::from_quat(quat);
 
-        for MouseMotion { delta } in mouse_motion_events {
-            let roll_magnitude = -ROTATION_RATE * delta.y;
-            let pitch_magnitude = -ROTATION_RATE * delta.x;
+            let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
 
-            let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
-            let roll = Quat::from_axis_angle(rotation_mat.x_axis, roll_magnitude);
+            for MouseMotion { delta } in mouse_motion_events {
+                let roll_magnitude = -ROTATION_RATE * delta.y;
+                let pitch_magnitude = -ROTATION_RATE * delta.x;
 
-            transform.rotation = pitch * roll * transform.rotation;
-            transform.rotation = transform.rotation.normalize();
+                let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
+                let roll = Quat::from_axis_angle(rotation_mat.x_axis, roll_magnitude);
+
+                camera_transform.rotation = pitch * roll * camera_transform.rotation;
+                camera_transform.rotation = camera_transform.rotation.normalize();
+            }
+
+            camera_transform.translation =
+                player_transform.translation + camera_transform.forward() * 10.0;
+        }
+    }
+}
+
+fn skybox_update(
+    mut skybox_query: Query<(&SkyboxState, &mut Transform)>,
+    player_query: Query<(&PlayerControl, &Transform)>,
+) {
+    for (_, mut skybox_transform) in skybox_query.iter_mut() {
+        for (_, player_transform) in player_query.iter() {
+            skybox_transform.translation = player_transform.translation;
         }
     }
 }
 
 fn player_control_update(
-    mut input_state: Local<PlayerInputState>,
     mouse_motion_events: Res<Events<MouseMotion>>,
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -106,25 +120,8 @@ fn player_control_update(
 
         let delta_v = forward * acceleration * time.delta_seconds;
         velocity.velocity += delta_v;
-
-        let mouse_motion_events = input_state
-            .mouse_motion_event_reader
-            .iter(&mouse_motion_events);
-
-        for MouseMotion { delta } in mouse_motion_events {
-            let yaw_magnitude = -ROTATION_RATE * delta.y;
-            let pitch_magnitude = -ROTATION_RATE * delta.x;
-
-            let yaw = Quat::from_axis_angle(rotation_mat.z_axis, yaw_magnitude);
-            let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
-
-            transform.rotation = yaw * pitch * transform.rotation;
-            transform.rotation = transform.rotation.normalize();
-        }
     }
 }
-
-struct PlayerControl;
 
 struct EarthMarker;
 
@@ -222,8 +219,17 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let skybox_mesh_handle = asset_server.load("models/skybox/skybox.gltf#Mesh0/Primitive0");
+    let skybox_material_handle = asset_server.load("models/skybox/skybox.gltf#Material0");
+
     commands
-        .spawn_scene(asset_server.load("models/skybox/skybox.gltf"))
+        .spawn(PbrBundle {
+            mesh: skybox_mesh_handle,
+            material: skybox_material_handle.clone(),
+            transform: Transform::from_translation(Vec3::new(-3.0, 0.0, 0.0)),
+            ..Default::default()
+        })
+        .with(SkyboxState)
         // Light
         .spawn(LightBundle {
             transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
@@ -232,6 +238,10 @@ fn setup(
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(5.0, 10.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),
+            perspective_projection: PerspectiveProjection {
+                far: 1100.0,
+                ..Default::default()
+            },
             ..Default::default()
         })
         .with(CameraState);
