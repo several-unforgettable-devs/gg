@@ -1,12 +1,18 @@
-use bevy::prelude::*;
-use rand::Rng;
+use bevy::{
+    //input::gamepad::{Gamepad, GamepadButton, GamepadEvent, GamepadEventType},
+    input::mouse::{MouseButtonInput, MouseMotion, MouseWheel},
+    prelude::*,
+    //utils::HashSet,
+};
 
-use bevy::input::mouse::MouseMotion;
+use rand::Rng;
 
 mod gravity;
 use crate::gravity::*;
 mod velocity;
 use crate::velocity::*;
+mod debug;
+use debug::{change_text_system, infotext_system};
 
 fn main() {
     App::build()
@@ -14,10 +20,13 @@ fn main() {
         .add_resource(GameState::Running)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
+        .add_startup_system(infotext_system)
         .add_system(player_control_update)
         .add_system(test_end_condition)
         .add_system(velocity_update)
         .add_system(gravity_update)
+        .add_system(change_text_system)
+        .add_system(mouse_input_update)
         .run();
 }
 
@@ -35,7 +44,44 @@ struct PlayerInputState {
     mouse_motion_event_reader: EventReader<MouseMotion>,
 }
 
+#[derive(Default)]
+struct MouseState {
+    mouse_button_event_reader: EventReader<MouseButtonInput>,
+    mouse_motion_event_reader: EventReader<MouseMotion>,
+    cursor_moved_event_reader: EventReader<CursorMoved>,
+    mouse_wheel_event_reader: EventReader<MouseWheel>,
+}
+
+struct CameraState;
+
 const ROTATION_RATE: f32 = 0.002;
+
+fn mouse_input_update(
+    mut state: Local<MouseState>,
+    mouse_button_input_events: Res<Events<MouseButtonInput>>,
+    mouse_motion_events: Res<Events<MouseMotion>>,
+    cursor_moved_events: Res<Events<CursorMoved>>,
+    mouse_wheel_events: Res<Events<MouseWheel>>,
+    mut query: Query<(&CameraState, &mut Transform)>,
+) {
+    for (cameraState, mut transform) in query.iter_mut() {
+        let quat = transform.rotation;
+        let rotation_mat = Mat3::from_quat(quat);
+
+        let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
+
+        for MouseMotion { delta } in mouse_motion_events {
+            let roll_magnitude = -ROTATION_RATE * delta.y;
+            let pitch_magnitude = -ROTATION_RATE * delta.x;
+
+            let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
+            let roll = Quat::from_axis_angle(rotation_mat.x_axis, roll_magnitude);
+
+            transform.rotation = pitch * roll * transform.rotation;
+            transform.rotation = transform.rotation.normalize();
+        }
+    }
+}
 
 fn player_control_update(
     mut input_state: Local<PlayerInputState>,
@@ -53,6 +99,7 @@ fn player_control_update(
         if keyboard_input.pressed(KeyCode::W) {
             acceleration += 1.0;
         }
+
         if keyboard_input.pressed(KeyCode::S) {
             acceleration -= 1.0;
         }
@@ -96,17 +143,7 @@ fn add_ship(
         })
         .with(PlayerControl)
         .with(Gravity { mass: 1. })
-        .with(Velocity::default())
-        .with_children(|parent| {
-            // Camera
-            parent.spawn(Camera3dBundle {
-                transform: Transform::from_matrix(Mat4::from_rotation_translation(
-                    Quat::from_xyzw(-0.3, -1.0, -0.3, 1.0).normalize(),
-                    Vec3::new(-18.0, 20.0, 0.0),
-                )),
-                ..Default::default()
-            });
-        });
+        .with(Velocity::default());
 }
 
 fn add_earth(
@@ -181,15 +218,23 @@ fn add_asteroids(
 
 fn setup(
     commands: &mut Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands
+        .spawn_scene(asset_server.load("models/skybox/skybox.gltf"))
         // Light
         .spawn(LightBundle {
             transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
             ..Default::default()
-        });
+        })
+        .spawn(Camera3dBundle {
+            transform: Transform::from_translation(Vec3::new(5.0, 10.0, 10.0))
+                .looking_at(Vec3::default(), Vec3::unit_y()),
+            ..Default::default()
+        })
+        .with(CameraState);
 
     add_ship(
         commands,
