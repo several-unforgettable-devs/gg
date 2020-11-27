@@ -31,6 +31,8 @@ Good to use if you've never worked in rust.
   - Install [git for windows](https://gitforwindows.org/)
   - Install Fork
   - Install SourceTree
+- Set up git lfs
+  - Run `git lfs install` just once, somewhere on your computer.
 - Clone this repository
   - Make sure you place the repository on a local drive.
   (USB or networked drives will experience severely degraded rust performance.)
