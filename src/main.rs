@@ -3,6 +3,8 @@ use rand::Rng;
 
 use bevy::input::mouse::MouseMotion;
 
+mod gravity;
+use crate::gravity::*;
 mod velocity;
 use crate::velocity::*;
 
@@ -15,6 +17,7 @@ fn main() {
         .add_system(player_control_update.system())
         .add_system(test_end_condition.system())
         .add_system(velocity_update.system())
+        .add_system(gravity_update.system())
         .run();
 }
 
