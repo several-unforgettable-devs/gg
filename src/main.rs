@@ -1,17 +1,18 @@
 use bevy::{
-    input::mouse::{MouseButtonInput, MouseMotion, MouseWheel},
     prelude::*,
     render::camera::PerspectiveProjection,
 };
 
 use rand::Rng;
 
-mod gravity;
-use crate::gravity::*;
-mod velocity;
-use crate::velocity::*;
 mod debug;
 use debug::{change_text_system, infotext_system};
+mod gravity;
+use crate::gravity::*;
+mod input;
+use crate::input::*;
+mod velocity;
+use crate::velocity::*;
 
 fn main() {
     App::build()
@@ -20,12 +21,12 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_startup_system(infotext_system)
-        .add_system(player_control_update)
+        .add_system(keyboard_input_update)
+        .add_system(mouse_input_update)
         .add_system(test_end_condition)
         .add_system(velocity_update)
         .add_system(gravity_update)
         .add_system(change_text_system)
-        .add_system(mouse_input_update)
         .add_system(skybox_update)
         .run();
 }
@@ -39,89 +40,16 @@ enum GameState {
     Won,
 }
 
-#[derive(Default)]
-struct MouseState {
-    mouse_button_event_reader: EventReader<MouseButtonInput>,
-    mouse_motion_event_reader: EventReader<MouseMotion>,
-    cursor_moved_event_reader: EventReader<CursorMoved>,
-    mouse_wheel_event_reader: EventReader<MouseWheel>,
-}
-
-struct CameraState;
-
 struct SkyboxState;
-
-struct PlayerControl;
-
-const ROTATION_RATE: f32 = 0.002;
-
-fn mouse_input_update(
-    mut state: Local<MouseState>,
-    mouse_motion_events: Res<Events<MouseMotion>>,
-    mut camera_query: Query<(&CameraState, &mut Transform)>,
-    mut player_query: Query<(&PlayerControl, &mut Transform)>,
-) {
-    for (_, mut player_transform) in player_query.iter_mut() {
-        for (_, mut camera_transform) in camera_query.iter_mut() {
-            camera_transform.translation = Vec3::zero();
-
-            let quat = player_transform.rotation;
-            let rotation_mat = Mat3::from_quat(quat);
-
-            let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
-
-            for MouseMotion { delta } in mouse_motion_events {
-                let yaw_magnitude = -ROTATION_RATE * delta.y;
-                let pitch_magnitude = -ROTATION_RATE * delta.x;
-
-                let yaw = Quat::from_axis_angle(rotation_mat.z_axis, yaw_magnitude);
-                let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
-
-                player_transform.rotation = yaw * pitch * player_transform.rotation;
-                player_transform.rotation = player_transform.rotation.normalize();
-            }
-
-            camera_transform.rotation = player_transform.rotation;
-
-            let forward = player_transform.forward();
-            camera_transform.translation = player_transform.translation + forward * 10.0;
-        }
-    }
-}
 
 fn skybox_update(
     mut skybox_query: Query<(&SkyboxState, &mut Transform)>,
-    player_query: Query<(&PlayerControl, &Transform)>,
+    player_query: Query<(&PlayerInput, &Transform)>,
 ) {
     for (_, mut skybox_transform) in skybox_query.iter_mut() {
         for (_, player_transform) in player_query.iter() {
             skybox_transform.translation = player_transform.translation;
         }
-    }
-}
-
-fn player_control_update(
-    mouse_motion_events: Res<Events<MouseMotion>>,
-    time: Res<Time>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&PlayerControl, &mut Transform, &mut Velocity)>,
-) {
-    for (_, mut transform, mut velocity) in query.iter_mut() {
-        let quat = transform.rotation;
-        let rotation_mat = Mat3::from_quat(quat);
-        let forward = rotation_mat.x_axis;
-
-        let mut acceleration = 0.0;
-        if keyboard_input.pressed(KeyCode::W) {
-            acceleration += 10.0;
-        }
-
-        if keyboard_input.pressed(KeyCode::S) {
-            acceleration -= 10.0;
-        }
-
-        let delta_v = forward * acceleration * time.delta_seconds;
-        velocity.velocity += delta_v;
     }
 }
 
@@ -140,7 +68,7 @@ fn add_ship(
             transform: Transform::from_translation(position),
             ..Default::default()
         })
-        .with(PlayerControl)
+        .with(PlayerInput)
         .with(Gravity { mass: 1. })
         .with(Velocity::default());
 }
@@ -246,7 +174,7 @@ fn setup(
             },
             ..Default::default()
         })
-        .with(CameraState);
+        .with(CameraInput);
 
     add_ship(
         commands,
@@ -272,7 +200,7 @@ fn calc_dist_sq(pos1: Vec3, pos2: Vec3) -> f32 {
 
 fn test_end_condition(
     mut game_state: ResMut<GameState>,
-    player_query: Query<(&PlayerControl, &Transform)>,
+    player_query: Query<(&PlayerInput, &Transform)>,
     earth_query: Query<(&EarthMarker, &Transform)>,
 ) {
     if *game_state != GameState::Running {
