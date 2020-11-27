@@ -30,7 +30,7 @@
                 "index" : 0,
                 "texCoord" : 0
             },
-            "name" : "Material.001",
+            "name" : "Material",
             "pbrMetallicRoughness" : {
                 "baseColorTexture" : {
                     "index" : 1,
@@ -43,7 +43,7 @@
     ],
     "meshes" : [
         {
-            "name" : "Sphere",
+            "name" : "Sphere.001",
             "primitives" : [
                 {
                     "attributes" : {
@@ -78,14 +78,14 @@
             "componentType" : 5126,
             "count" : 16256,
             "max" : [
-                99.99982452392578,
-                100,
-                99.9996566772461
+                999.9979248046875,
+                1000,
+                999.9962158203125
             ],
             "min" : [
-                -99.99983215332031,
-                -100,
-                -100
+                -999.998291015625,
+                -1000,
+                -999.9998779296875
             ],
             "type" : "VEC3"
         },

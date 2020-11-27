@@ -1,10 +1,14 @@
-use bevy::prelude::*;
-use rand::Rng;
+use bevy::{
+    prelude::*,
+    render::camera::PerspectiveProjection,
+};
 
-
-
+mod debug;
+use debug::{change_text_system, infotext_system};
 mod gravity;
 use crate::gravity::*;
+mod input;
+use crate::input::*;
 mod velocity;
 use crate::velocity::*;
 mod ship;
@@ -16,10 +20,14 @@ fn main() {
         .add_resource(GameState::Running)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
-        .add_system(player_control_update)
+        .add_startup_system(infotext_system)
+        .add_system(keyboard_input_update)
+        .add_system(mouse_input_update)
         .add_system(test_end_condition)
         .add_system(velocity_update)
         .add_system(gravity_update)
+        .add_system(change_text_system)
+        .add_system(skybox_update)
         .run();
 }
 
@@ -32,7 +40,38 @@ enum GameState {
     Won,
 }
 
+struct SkyboxState;
+
+fn skybox_update(
+    mut skybox_query: Query<(&SkyboxState, &mut Transform)>,
+    player_query: Query<(&PlayerInput, &Transform)>,
+) {
+    for (_, mut skybox_transform) in skybox_query.iter_mut() {
+        for (_, player_transform) in player_query.iter() {
+            skybox_transform.translation = player_transform.translation;
+        }
+    }
+}
+
 struct EarthMarker;
+
+fn add_ship(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    position: Vec3,
+) {
+    commands
+        .spawn(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
+            material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
+            transform: Transform::from_translation(position),
+            ..Default::default()
+        })
+        .with(PlayerInput)
+        .with(Gravity { mass: 1. })
+        .with(Velocity::default());
+}
 
 fn add_earth(
     commands: &mut Commands,
@@ -106,15 +145,36 @@ fn add_asteroids(
 
 fn setup(
     commands: &mut Commands,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let skybox_mesh_handle = asset_server.load("models/skybox/skybox.gltf#Mesh0/Primitive0");
+    let skybox_material_handle = asset_server.load("models/skybox/skybox.gltf#Material0");
+
     commands
+        .spawn(PbrBundle {
+            mesh: skybox_mesh_handle,
+            material: skybox_material_handle.clone(),
+            transform: Transform::from_translation(Vec3::new(-3.0, 0.0, 0.0)),
+            ..Default::default()
+        })
+        .with(SkyboxState)
         // Light
         .spawn(LightBundle {
             transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
             ..Default::default()
-        });
+        })
+        .spawn(Camera3dBundle {
+            transform: Transform::from_translation(Vec3::new(5.0, 10.0, 10.0))
+                .looking_at(Vec3::default(), Vec3::unit_y()),
+            perspective_projection: PerspectiveProjection {
+                far: 1100.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .with(CameraInput);
 
     add_ship(
         commands,
@@ -140,7 +200,7 @@ fn calc_dist_sq(pos1: Vec3, pos2: Vec3) -> f32 {
 
 fn test_end_condition(
     mut game_state: ResMut<GameState>,
-    player_query: Query<(&PlayerControl, &Transform)>,
+    player_query: Query<(&PlayerInput, &Transform)>,
     earth_query: Query<(&EarthMarker, &Transform)>,
 ) {
     if *game_state != GameState::Running {
