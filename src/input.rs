@@ -1,5 +1,8 @@
-use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy::input::mouse::MouseMotion;
+use bevy::prelude::*;
 
+use crate::audio::play_sound;
+use crate::cooldown::*;
 use crate::velocity::*;
 
 pub struct CameraInput;
@@ -50,9 +53,18 @@ pub fn mouse_input_update(
     }
 }
 
+const THRUSTER_SOUND_DURATION: f64 = 2.5;
+
 pub fn keyboard_input_update(
+    // For input
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
+
+    // For thruster sound effects
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+    mut thruster_sound_cooldown: Local<Cooldown>,
+
     camera_query: Query<(&CameraInput, &Transform)>,
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
 ) {
@@ -71,6 +83,15 @@ pub fn keyboard_input_update(
 
             if keyboard_input.pressed(KeyCode::S) {
                 acceleration -= 10.0;
+            }
+
+            if acceleration != 0. && thruster_sound_cooldown.over(&time) {
+                play_sound(
+                    &asset_server,
+                    &audio,
+                    "audio/AmbientThrusterLoopShortened.mp3",
+                );
+                thruster_sound_cooldown.reset(&time, THRUSTER_SOUND_DURATION);
             }
 
             let delta_v = forward * acceleration * time.delta_seconds;
