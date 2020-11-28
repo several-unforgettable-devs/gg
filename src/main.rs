@@ -63,8 +63,6 @@ struct EarthMarker;
 fn add_ship(
     commands: &mut Commands,
     asset_server: Res<AssetServer>,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
 ) {
     let ship_mesh_handle =
@@ -160,8 +158,6 @@ fn setup(
     add_ship(
         commands,
         asset_server,
-        &mut meshes,
-        &mut materials,
         Vec3::new(-40.0, 0., 0.0),
     );
 

@@ -17,7 +17,6 @@ pub fn add_asteroids(
     let asteroid_max_spawn_distance = 150.0;
     let asteroid_min_radius = 0.9;
     let asteroid_max_radius = 3.0;
-    let asteroid_mass = 0.001;
     let asteroid_relative_tangential_speed = 20.0;
 
     let asteroids_per_axis: i32 = (asteroid_max_spawn_distance / asteroid_density) as i32;
