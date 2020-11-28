@@ -31,6 +31,8 @@ struct CollisionData {
 const ASTEROID_COLLISION_SOUND_DURATION: f64 = 1.;
 
 pub fn collision_update(
+    commands: &mut Commands,
+
     time: Res<Time>,
 
     mut game_state: ResMut<crate::GameState>,
@@ -72,6 +74,7 @@ pub fn collision_update(
             }
 
             collision_gameplay_logic(
+                commands,
                 &*time,
                 &mut game_state,
                 &asset_server,
@@ -117,9 +120,10 @@ const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED: f32 =
 // Objects parameters to collision_gameplay_logic are ordered by collision type
 // to reduce the number of permutations
 fn collision_gameplay_logic(
+    commands: &mut Commands,
     time: &Time,
 
-    mut game_state: &mut GameState,
+    game_state: &mut GameState,
 
     // For collision sound effects
     asset_server: &Res<AssetServer>,
@@ -150,6 +154,8 @@ fn collision_gameplay_logic(
 
             if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
                 play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+                commands.despawn(obj2.entity);
+                *game_state = GameState::Lost;
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);

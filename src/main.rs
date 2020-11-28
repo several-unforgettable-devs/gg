@@ -40,7 +40,7 @@ fn main() {
 pub enum GameState {
     Running,
     Paused,
-    GameOver,
+    Lost,
     Won,
 }
 
