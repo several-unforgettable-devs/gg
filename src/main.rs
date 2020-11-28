@@ -27,7 +27,6 @@ fn main() {
         .add_startup_system(infotext_system)
         .add_system(keyboard_input_update)
         .add_system(mouse_input_update)
-        .add_system(test_end_condition)
         .add_system(velocity_update)
         .add_system(collision_update)
         .add_system(gravity_update)
@@ -38,7 +37,7 @@ fn main() {
 
 #[allow(dead_code)]
 #[derive(PartialEq)]
-enum GameState {
+pub enum GameState {
     Running,
     Paused,
     GameOver,
@@ -60,11 +59,7 @@ fn skybox_update(
 
 struct EarthMarker;
 
-fn add_ship(
-    commands: &mut Commands,
-    asset_server: Res<AssetServer>,
-    position: Vec3,
-) {
+fn add_ship(commands: &mut Commands, asset_server: Res<AssetServer>, position: Vec3) {
     let ship_mesh_handle =
         asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Mesh0/Primitive0");
 
@@ -155,11 +150,7 @@ fn setup(
         })
         .with(CameraInput);
 
-    add_ship(
-        commands,
-        asset_server,
-        Vec3::new(-40.0, 0., 0.0),
-    );
+    add_ship(commands, asset_server, Vec3::new(-40.0, 0., 0.0));
 
     add_earth(
         commands,
@@ -169,34 +160,4 @@ fn setup(
     );
 
     add_asteroids(commands, &mut meshes, &mut materials);
-}
-
-fn calc_dist_sq(pos1: Vec3, pos2: Vec3) -> f32 {
-    let diff = pos1 - pos2;
-    diff.dot(diff)
-}
-
-fn test_end_condition(
-    mut game_state: ResMut<GameState>,
-    player_query: Query<(&PlayerInput, &Transform)>,
-    earth_query: Query<(&EarthMarker, &Transform)>,
-) {
-    if *game_state != GameState::Running {
-        return;
-    }
-
-    const VICTORY_DISTANCE: f32 = 10.0;
-    let distance_sq: f32 = VICTORY_DISTANCE * VICTORY_DISTANCE;
-
-    for (_, player_transform) in player_query.iter() {
-        for (_, earth_transform) in earth_query.iter() {
-            if calc_dist_sq(player_transform.translation, earth_transform.translation)
-                <= distance_sq
-            {
-                // insert end of game message here!!
-                println!("YOU WIN!!");
-                *game_state = GameState::Won;
-            }
-        }
-    }
 }

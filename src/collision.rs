@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::audio::*;
 use crate::cooldown::*;
 use crate::velocity::*;
+use crate::GameState;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum CollisionType {
@@ -31,6 +32,8 @@ const ASTEROID_COLLISION_SOUND_DURATION: f64 = 1.;
 
 pub fn collision_update(
     time: Res<Time>,
+
+    mut game_state: ResMut<crate::GameState>,
 
     // For collision sound effects
     asset_server: Res<AssetServer>,
@@ -70,6 +73,7 @@ pub fn collision_update(
 
             collision_gameplay_logic(
                 &*time,
+                &mut game_state,
                 &asset_server,
                 &audio,
                 &mut collision_sound_cooldown,
@@ -115,6 +119,8 @@ const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED: f32 =
 fn collision_gameplay_logic(
     time: &Time,
 
+    mut game_state: &mut GameState,
+
     // For collision sound effects
     asset_server: &Res<AssetServer>,
     audio: &Res<Audio>,
@@ -149,7 +155,15 @@ fn collision_gameplay_logic(
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
             }
         }
-        (CollisionType::Earth, CollisionType::Player) => (),
+        (CollisionType::Earth, CollisionType::Player) => {
+            if *game_state != GameState::Running {
+                return;
+            }
+
+            play_sound(asset_server, audio, "audio/GameWin.mp3");
+            println!("YOU WIN!!");
+            *game_state = GameState::Won;
+        }
 
         // All ordered collision permutations have already been handled
         _ => (),
