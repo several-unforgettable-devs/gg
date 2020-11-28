@@ -4,6 +4,8 @@ use bevy::{
 };
 use rand::Rng;
 
+mod audio;
+use crate::audio::*;
 mod debug;
 use debug::{change_text_system, infotext_system};
 mod gravity;
@@ -21,6 +23,7 @@ fn main() {
         .add_resource(GameState::Running)
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
+        .add_startup_system(setup_audio)
         .add_startup_system(infotext_system)
         .add_system(keyboard_input_update)
         .add_system(mouse_input_update)
