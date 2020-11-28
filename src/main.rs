@@ -62,15 +62,28 @@ struct EarthMarker;
 
 fn add_ship(
     commands: &mut Commands,
+    asset_server: Res<AssetServer>,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
 ) {
+    let ship_mesh_handle =
+        asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Mesh0/Primitive0");
+
+    let ship_material_handle =
+        asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Material0");
+
+    let ship_scale = 2.;
+
     commands
         .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
-            material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
-            transform: Transform::from_translation(position),
+            mesh: ship_mesh_handle,
+            material: ship_material_handle,
+            transform: Transform {
+                translation: position,
+                scale: Vec3::splat(ship_scale),
+                ..Default::default()
+            },
             ..Default::default()
         })
         .with(PlayerInput)
@@ -146,6 +159,7 @@ fn setup(
 
     add_ship(
         commands,
+        asset_server,
         &mut meshes,
         &mut materials,
         Vec3::new(-40.0, 0., 0.0),
