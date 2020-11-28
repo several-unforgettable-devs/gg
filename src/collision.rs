@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 
+use crate::audio::*;
+use crate::cooldown::*;
 use crate::velocity::*;
+use crate::GameState;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum CollisionType {
     Asteroid,
     Earth,
@@ -18,42 +21,50 @@ pub struct Collision {
 
 const COLLISION_SPRING_CONSTANT: f32 = 2048.;
 
+struct CollisionData {
+    entity: Entity,
+    position: Vec3, // Position
+    velocity: Vec3, // Velocity
+    collision: Collision,
+}
+
+const ASTEROID_COLLISION_SOUND_DURATION: f64 = 1.;
+
 pub fn collision_update(
+    commands: &mut Commands,
+
     time: Res<Time>,
+
+    mut game_state: ResMut<crate::GameState>,
+
+    // For collision sound effects
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+    mut collision_sound_cooldown: Local<Cooldown>,
+
     mut query: Query<(Entity, &Transform, &mut Velocity, &Collision)>,
 ) {
-    let objects: Vec<(Entity, Vec3, Collision)> = query
+    let objects: Vec<CollisionData> = query
         .iter_mut()
-        .map(|(e, t, _, c)| (e, t.translation, *c))
+        .map(|(e, t, v, c)| CollisionData {
+            entity: e,
+            position: t.translation,
+            velocity: v.velocity,
+            collision: *c,
+        })
         .collect();
 
     let object_count = objects.len();
 
     for i in 0..object_count {
-        let (
-            e1,
-            p1,
-            Collision {
-                mass: m1,
-                radius: r1,
-                ctype: _c1,
-            },
-        ) = &objects[i];
+        let obj1 = &objects[i];
 
         for j in (i + 1)..object_count {
-            let (
-                e2,
-                p2,
-                Collision {
-                    mass: m2,
-                    radius: r2,
-                    ctype: _c2,
-                },
-            ) = &objects[j];
+            let obj2 = &objects[j];
 
-            let displacement = *p2 - *p1;
+            let displacement = obj2.position - obj1.position;
 
-            let combined_radius = *r1 + *r2;
+            let combined_radius = obj1.collision.radius + obj2.collision.radius;
             let combined_radius_squared = combined_radius * combined_radius;
 
             let distance_squared = displacement.length_squared();
@@ -61,6 +72,17 @@ pub fn collision_update(
                 // No collision
                 continue;
             }
+
+            collision_gameplay_logic(
+                commands,
+                &*time,
+                &mut game_state,
+                &asset_server,
+                &audio,
+                &mut collision_sound_cooldown,
+                obj1,
+                obj2,
+            );
 
             let distance = distance_squared.sqrt();
             let direction = displacement / distance;
@@ -73,20 +95,83 @@ pub fn collision_update(
 
             let impulse = impulse_magnitude * direction;
 
-            match query.get_component_mut::<Velocity>(*e1) {
+            match query.get_component_mut::<Velocity>(obj1.entity) {
                 Ok(mut v1) => {
-                    let delta_v = impulse / *m1;
+                    let delta_v = impulse / obj1.collision.mass;
                     (*v1).velocity -= delta_v;
                 }
                 _ => (),
             }
-            match query.get_component_mut::<Velocity>(*e2) {
+            match query.get_component_mut::<Velocity>(obj2.entity) {
                 Ok(mut v2) => {
-                    let delta_v = impulse / *m2;
+                    let delta_v = impulse / obj2.collision.mass;
                     (*v2).velocity += delta_v;
                 }
                 _ => (),
             }
         }
     }
+}
+
+const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID: f32 = 3.;
+const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED: f32 =
+    LETHAL_RELATIVE_VELOCITY_OF_ASTEROID * LETHAL_RELATIVE_VELOCITY_OF_ASTEROID;
+
+// Objects parameters to collision_gameplay_logic are ordered by collision type
+// to reduce the number of permutations
+fn collision_gameplay_logic(
+    commands: &mut Commands,
+    time: &Time,
+
+    game_state: &mut GameState,
+
+    // For collision sound effects
+    asset_server: &Res<AssetServer>,
+    audio: &Res<Audio>,
+    collision_sound_cooldown: &mut Local<Cooldown>,
+
+    obj_a: &CollisionData,
+    obj_b: &CollisionData,
+) {
+    // Order the objects by collision type to reduce the number of permutations
+    let obj1 = if obj_a.collision.ctype <= obj_b.collision.ctype {
+        &obj_a
+    } else {
+        &obj_b
+    };
+    let obj2 = if obj_a.collision.ctype <= obj_b.collision.ctype {
+        &obj_b
+    } else {
+        &obj_a
+    };
+
+    match (obj1.collision.ctype, obj2.collision.ctype) {
+        (CollisionType::Asteroid, CollisionType::Asteroid) => (),
+        (CollisionType::Asteroid, CollisionType::Earth) => (),
+        (CollisionType::Asteroid, CollisionType::Player) => {
+            let relative_velocity = obj1.velocity - obj2.velocity;
+            let relative_speed_squared = relative_velocity.length_squared();
+
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
+                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+                commands.despawn(obj2.entity);
+                *game_state = GameState::Lost;
+            } else if collision_sound_cooldown.over(&time) {
+                play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
+                collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
+            }
+        }
+        (CollisionType::Earth, CollisionType::Player) => {
+            if *game_state != GameState::Running {
+                return;
+            }
+
+            play_sound(asset_server, audio, "audio/GameWin.mp3");
+            println!("YOU WIN!!");
+            *game_state = GameState::Won;
+        }
+
+        // All ordered collision permutations have already been handled
+        _ => (),
+    };
 }
