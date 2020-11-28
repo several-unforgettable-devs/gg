@@ -6,6 +6,7 @@ use rand::Rng;
 
 mod audio;
 use crate::audio::*;
+mod cooldown;
 mod debug;
 use debug::{change_text_system, infotext_system};
 mod gravity;
