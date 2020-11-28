@@ -44,6 +44,14 @@ pub enum GameState {
     Won,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub enum EntityType {
+    Asteroid,
+    Bullet,
+    Earth,
+    Player,
+}
+
 struct SkyboxState;
 
 fn skybox_update(
@@ -84,7 +92,7 @@ fn add_ship(commands: &mut Commands, asset_server: Res<AssetServer>, position: V
         .with(Collision {
             mass: 4.,
             radius: 2.,
-            ctype: CollisionType::Player,
+            ctype: EntityType::Player,
         })
         .with(Velocity::default());
 }
@@ -112,7 +120,7 @@ fn add_earth(
         .with(Collision {
             mass: earth_mass,
             radius: earth_radius,
-            ctype: CollisionType::Earth,
+            ctype: EntityType::Earth,
         })
         .with(Velocity::default());
 }

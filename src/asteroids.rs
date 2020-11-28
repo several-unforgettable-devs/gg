@@ -70,7 +70,7 @@ pub fn add_asteroids(
             .with(Collision {
                 mass: asteroid_mass,
                 radius: asteroid_radius,
-                ctype: CollisionType::Asteroid,
+                ctype: EntityType::Asteroid,
             })
             .with(Velocity {
                 velocity: asteroid_rotation

@@ -3,20 +3,14 @@ use bevy::prelude::*;
 use crate::audio::*;
 use crate::cooldown::*;
 use crate::velocity::*;
+pub use crate::EntityType;
 use crate::GameState;
-
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub enum CollisionType {
-    Asteroid,
-    Earth,
-    Player,
-}
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Collision {
     pub mass: f32,
     pub radius: f32,
-    pub ctype: CollisionType,
+    pub ctype: EntityType,
 }
 
 const COLLISION_SPRING_CONSTANT: f32 = 2048.;
@@ -146,9 +140,9 @@ fn collision_gameplay_logic(
     };
 
     match (obj1.collision.ctype, obj2.collision.ctype) {
-        (CollisionType::Asteroid, CollisionType::Asteroid) => (),
-        (CollisionType::Asteroid, CollisionType::Earth) => (),
-        (CollisionType::Asteroid, CollisionType::Player) => {
+        (EntityType::Asteroid, EntityType::Asteroid) => (),
+        (EntityType::Asteroid, EntityType::Earth) => (),
+        (EntityType::Asteroid, EntityType::Player) => {
             let relative_velocity = obj1.velocity - obj2.velocity;
             let relative_speed_squared = relative_velocity.length_squared();
 
@@ -161,7 +155,7 @@ fn collision_gameplay_logic(
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
             }
         }
-        (CollisionType::Earth, CollisionType::Player) => {
+        (EntityType::Earth, EntityType::Player) => {
             if *game_state != GameState::Running {
                 return;
             }
