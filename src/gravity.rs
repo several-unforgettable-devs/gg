@@ -25,27 +25,39 @@ pub fn gravity_update(
         .iter_mut()
         .map(|(e, t, _, g)| (e, t.translation, *g))
         .collect();
-    for (e1, p1, Gravity { mass: m1 }) in objects.iter() {
-        // Pre-multiply everything that does not depend on the second object,
-        // to avoid some work in the inner loop
-        let premultiplied_factor = GRAVITATIONAL_CONSTANT * m1 * time.delta_seconds;
 
-        for (e2, p2, _) in objects.iter() {
-            if e2 == e1 {
-                continue;
-            }
+    let object_count = objects.len();
+
+    for i in 0..object_count {
+        let (e1, p1, Gravity { mass: m1 }) = &objects[i];
+
+        for j in (i + 1)..object_count {
+            let (e2, p2, Gravity { mass: m2 }) = &objects[j];
+
             let displacement = *p1 - *p2;
             let dist_squared = displacement.length_squared();
             if dist_squared < MIN_GRAVITATION_DISTANCE_SQUARED {
                 continue;
             }
+            let dist_squared_recip = dist_squared.recip();
+            let dist_recip = dist_squared_recip.sqrt();
+            let direction = displacement * dist_recip;
+
+            let force = GRAVITATIONAL_CONSTANT * m1 * m2 * dist_squared_recip;
+            let impulse_magnitude = force * time.delta_seconds;
+
+            let impulse = impulse_magnitude * direction;
+
+            match query.get_component_mut::<Velocity>(*e1) {
+                Ok(mut v1) => {
+                    let delta_v = impulse / *m1;
+                    (*v1).velocity -= delta_v;
+                }
+                _ => (),
+            }
             match query.get_component_mut::<Velocity>(*e2) {
                 Ok(mut v2) => {
-                    let dist_squared_recip = dist_squared.recip();
-                    let dist_recip = dist_squared_recip.sqrt();
-                    let change_in_speed = premultiplied_factor * dist_squared_recip;
-                    let direction = displacement * dist_recip;
-                    let delta_v = change_in_speed * direction;
+                    let delta_v = impulse / *m2;
                     (*v2).velocity += delta_v;
                 }
                 _ => (),
