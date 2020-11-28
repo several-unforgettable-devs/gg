@@ -5,7 +5,9 @@ mod asteroids;
 use crate::asteroids::*;
 mod audio;
 use crate::audio::*;
+mod collision;
 mod cooldown;
+use crate::collision::*;
 mod debug;
 use debug::{change_text_system, infotext_system};
 mod gravity;
@@ -27,6 +29,7 @@ fn main() {
         .add_system(mouse_input_update)
         .add_system(test_end_condition)
         .add_system(velocity_update)
+        .add_system(collision_update)
         .add_system(gravity_update)
         .add_system(change_text_system)
         .add_system(skybox_update)
@@ -71,7 +74,12 @@ fn add_ship(
             ..Default::default()
         })
         .with(PlayerInput)
-        .with(Gravity { mass: 1. })
+        .with(Gravity { mass: 4. })
+        .with(Collision {
+            mass: 4.,
+            radius: 2.,
+            ctype: CollisionType::Player,
+        })
         .with(Velocity::default());
 }
 
@@ -81,10 +89,12 @@ fn add_earth(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
 ) {
+    let earth_radius = 4.;
+    let earth_mass = earth_radius * earth_radius;
     commands
         .spawn(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Icosphere {
-                radius: 2.0,
+                radius: earth_radius,
                 ..Default::default()
             })),
             material: materials.add(Color::rgb(0.2, 0.2, 1.0).into()),
@@ -92,7 +102,12 @@ fn add_earth(
             ..Default::default()
         })
         .with(EarthMarker)
-        .with(Gravity { mass: 10. })
+        .with(Gravity { mass: earth_mass })
+        .with(Collision {
+            mass: earth_mass,
+            radius: earth_radius,
+            ctype: CollisionType::Earth,
+        })
         .with(Velocity::default());
 }
 

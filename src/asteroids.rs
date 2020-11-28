@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 
+use crate::collision::*;
 use crate::gravity::*;
 use crate::velocity::*;
 
@@ -41,19 +42,42 @@ pub fn add_asteroids(
         );
         asteroid_position += asteroid_offset;
 
-        let asteroid_rotation: Vec3 = asteroid_position.normalize().cross(Vec3::new(rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0)).normalize());
+        let asteroid_rotation: Vec3 = asteroid_position.normalize().cross(
+            Vec3::new(
+                rng.gen_range(0.0, 1.0),
+                rng.gen_range(0.0, 1.0),
+                rng.gen_range(0.0, 1.0),
+            )
+            .normalize(),
+        );
+
+        let asteroid_radius = rng.gen_range(asteroid_min_radius, asteroid_max_radius);
+
+        let asteroid_mass = asteroid_radius * asteroid_radius;
 
         commands
             .spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: rng.gen_range(asteroid_min_radius, asteroid_max_radius),
+                    radius: asteroid_radius,
                     subdivisions: 4,
                 })),
                 material: materials.add(Color::rgb(0.5, 0.5, 0.5).into()),
                 transform: Transform::from_translation(asteroid_position),
                 ..Default::default()
             })
-            .with(Gravity { mass: asteroid_mass })
-            .with(Velocity {velocity: asteroid_rotation * asteroid_position.length() * asteroid_relative_tangential_speed / asteroid_max_spawn_distance});
+            .with(Gravity {
+                mass: asteroid_mass,
+            })
+            .with(Collision {
+                mass: asteroid_mass,
+                radius: asteroid_radius,
+                ctype: CollisionType::Asteroid,
+            })
+            .with(Velocity {
+                velocity: asteroid_rotation
+                    * asteroid_position.length()
+                    * asteroid_relative_tangential_speed
+                    / asteroid_max_spawn_distance,
+            });
     }
 }
