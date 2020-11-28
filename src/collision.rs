@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 
 use crate::audio::*;
+use crate::cooldown::*;
 use crate::velocity::*;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum CollisionType {
     Asteroid,
     Earth,
@@ -26,8 +27,16 @@ struct CollisionData {
     collision: Collision,
 }
 
+const ASTEROID_COLLISION_SOUND_DURATION: f64 = 1.;
+
 pub fn collision_update(
     time: Res<Time>,
+
+    // For collision sound effects
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+    mut collision_sound_cooldown: Local<Cooldown>,
+
     mut query: Query<(Entity, &Transform, &mut Velocity, &Collision)>,
 ) {
     let objects: Vec<CollisionData> = query
@@ -59,6 +68,15 @@ pub fn collision_update(
                 continue;
             }
 
+            collision_gameplay_logic(
+                &*time,
+                &asset_server,
+                &audio,
+                &mut collision_sound_cooldown,
+                obj1,
+                obj2,
+            );
+
             let distance = distance_squared.sqrt();
             let direction = displacement / distance;
 
@@ -88,14 +106,52 @@ pub fn collision_update(
     }
 }
 
-fn collision_gameplay_logic() {
+const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID: f32 = 3.;
+const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED: f32 =
+    LETHAL_RELATIVE_VELOCITY_OF_ASTEROID * LETHAL_RELATIVE_VELOCITY_OF_ASTEROID;
 
-    // use CollisionType::*;
-    // match (c1, c2) {
-    //     (Asteroid, Asteroid) => (),
+// Objects parameters to collision_gameplay_logic are ordered by collision type
+// to reduce the number of permutations
+fn collision_gameplay_logic(
+    time: &Time,
 
-    // };
+    // For collision sound effects
+    asset_server: &Res<AssetServer>,
+    audio: &Res<Audio>,
+    collision_sound_cooldown: &mut Local<Cooldown>,
 
-    // let relativeVelocity = *v2 - *v1;
-    // let relativeSpeed = relativeVelocity.length();
+    obj_a: &CollisionData,
+    obj_b: &CollisionData,
+) {
+    // Order the objects by collision type to reduce the number of permutations
+    let obj1 = if obj_a.collision.ctype <= obj_b.collision.ctype {
+        &obj_a
+    } else {
+        &obj_b
+    };
+    let obj2 = if obj_a.collision.ctype <= obj_b.collision.ctype {
+        &obj_b
+    } else {
+        &obj_a
+    };
+
+    match (obj1.collision.ctype, obj2.collision.ctype) {
+        (CollisionType::Asteroid, CollisionType::Asteroid) => (),
+        (CollisionType::Asteroid, CollisionType::Earth) => (),
+        (CollisionType::Asteroid, CollisionType::Player) => {
+            let relative_velocity = obj1.velocity - obj2.velocity;
+            let relative_speed_squared = relative_velocity.length_squared();
+
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
+                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+            } else if collision_sound_cooldown.over(&time) {
+                play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
+                collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
+            }
+        }
+        (CollisionType::Earth, CollisionType::Player) => (),
+
+        // All ordered collision permutations have already been handled
+        _ => (),
+    };
 }
