@@ -110,6 +110,8 @@ fn add_asteroids(
     let asteroid_max_spawn_distance = 150.0;
     let asteroid_min_radius = 0.9;
     let asteroid_max_radius = 3.0;
+    let asteroid_mass = 0.001;
+    let asteroid_relative_tangential_speed = 20.0;
 
     let asteroids_per_axis: i32 = (asteroid_max_spawn_distance / asteroid_density) as i32;
     let total_asteroids = asteroids_per_axis.pow(3);
@@ -132,6 +134,9 @@ fn add_asteroids(
                 - asteroid_max_spawn_radius,
         );
         asteroid_position += asteroid_offset;
+
+        let asteroid_rotation: Vec3 = asteroid_position.normalize().cross(Vec3::new(rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0), rng.gen_range(0.0, 1.0)).normalize());
+
         commands
             .spawn(PbrBundle {
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
@@ -142,8 +147,8 @@ fn add_asteroids(
                 transform: Transform::from_translation(asteroid_position),
                 ..Default::default()
             })
-            .with(Gravity { mass: 1. })
-            .with(Velocity::default());
+            .with(Gravity { mass: asteroid_mass })
+            .with(Velocity {velocity: asteroid_rotation * asteroid_position.length() * asteroid_relative_tangential_speed / asteroid_max_spawn_distance});
     }
 }
 
