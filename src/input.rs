@@ -45,7 +45,8 @@ pub fn mouse_input_update(
             camera_transform.rotation = player_transform.rotation;
 
             let forward = player_transform.forward();
-            camera_transform.translation = player_transform.translation + forward * 10.0;
+            let up = player_transform.rotation * Vec3::unit_y();
+            camera_transform.translation = player_transform.translation + forward * 10.0 + up * 2.5;
         }
     }
 }
