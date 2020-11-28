@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::audio::*;
 use crate::velocity::*;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -18,42 +19,38 @@ pub struct Collision {
 
 const COLLISION_SPRING_CONSTANT: f32 = 2048.;
 
+struct CollisionData {
+    entity: Entity,
+    position: Vec3, // Position
+    velocity: Vec3, // Velocity
+    collision: Collision,
+}
+
 pub fn collision_update(
     time: Res<Time>,
     mut query: Query<(Entity, &Transform, &mut Velocity, &Collision)>,
 ) {
-    let objects: Vec<(Entity, Vec3, Collision)> = query
+    let objects: Vec<CollisionData> = query
         .iter_mut()
-        .map(|(e, t, _, c)| (e, t.translation, *c))
+        .map(|(e, t, v, c)| CollisionData {
+            entity: e,
+            position: t.translation,
+            velocity: v.velocity,
+            collision: *c,
+        })
         .collect();
 
     let object_count = objects.len();
 
     for i in 0..object_count {
-        let (
-            e1,
-            p1,
-            Collision {
-                mass: m1,
-                radius: r1,
-                ctype: _c1,
-            },
-        ) = &objects[i];
+        let obj1 = &objects[i];
 
         for j in (i + 1)..object_count {
-            let (
-                e2,
-                p2,
-                Collision {
-                    mass: m2,
-                    radius: r2,
-                    ctype: _c2,
-                },
-            ) = &objects[j];
+            let obj2 = &objects[j];
 
-            let displacement = *p2 - *p1;
+            let displacement = obj2.position - obj1.position;
 
-            let combined_radius = *r1 + *r2;
+            let combined_radius = obj1.collision.radius + obj2.collision.radius;
             let combined_radius_squared = combined_radius * combined_radius;
 
             let distance_squared = displacement.length_squared();
@@ -73,20 +70,32 @@ pub fn collision_update(
 
             let impulse = impulse_magnitude * direction;
 
-            match query.get_component_mut::<Velocity>(*e1) {
+            match query.get_component_mut::<Velocity>(obj1.entity) {
                 Ok(mut v1) => {
-                    let delta_v = impulse / *m1;
+                    let delta_v = impulse / obj1.collision.mass;
                     (*v1).velocity -= delta_v;
                 }
                 _ => (),
             }
-            match query.get_component_mut::<Velocity>(*e2) {
+            match query.get_component_mut::<Velocity>(obj2.entity) {
                 Ok(mut v2) => {
-                    let delta_v = impulse / *m2;
+                    let delta_v = impulse / obj2.collision.mass;
                     (*v2).velocity += delta_v;
                 }
                 _ => (),
             }
         }
     }
+}
+
+fn collision_gameplay_logic() {
+
+    // use CollisionType::*;
+    // match (c1, c2) {
+    //     (Asteroid, Asteroid) => (),
+
+    // };
+
+    // let relativeVelocity = *v2 - *v1;
+    // let relativeSpeed = relativeVelocity.length();
 }
