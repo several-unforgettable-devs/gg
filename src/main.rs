@@ -14,8 +14,6 @@ mod input;
 use crate::input::*;
 mod velocity;
 use crate::velocity::*;
-mod ship;
-use crate::ship::*;
 
 fn main() {
     App::build()
