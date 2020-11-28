@@ -26,6 +26,7 @@ fn main() {
         .add_startup_system(infotext_system)
         .add_system(keyboard_input_update)
         .add_system(mouse_input_update)
+        // .add_system(mouse_input_update_player)
         .add_system(test_end_condition)
         .add_system(velocity_update)
         .add_system(gravity_update)
@@ -60,17 +61,27 @@ struct EarthMarker;
 
 fn add_ship(
     commands: &mut Commands,
+    asset_server: Res<AssetServer>,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
 ) {
+    // let ship_mesh_handle = asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Mesh0/Primitive0");
+    // let ship_mesh_handle = asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Mesh0");
+
+    // let ship_mesh_handle = asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Node0");
+
+    // let ship_material_handle = asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Material0");
+
     commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
-            material: materials.add(Color::rgb(1., 0.9, 0.9).into()),
-            transform: Transform::from_translation(position),
-            ..Default::default()
-        })
+        // .spawn(PbrBundle {
+        //     mesh: ship_mesh_handle,// meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
+        //     material: ship_material_handle, //materials.add(Color::rgb(1., 0.9, 0.9).into()),
+        //     transform: Transform::from_translation(position),
+        //     ..Default::default()
+        // })
+        .spawn_scene(asset_server.load("models/ship/player/PlayerShip01_AA.gltf"))
+        .with(Transform::from_translation(position))
         .with(PlayerInput)
         .with(Gravity { mass: 1. })
         .with(Velocity::default());
@@ -186,6 +197,7 @@ fn setup(
 
     add_ship(
         commands,
+        asset_server,
         &mut meshes,
         &mut materials,
         Vec3::new(-40.0, 0., 0.0),

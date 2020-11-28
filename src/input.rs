@@ -5,8 +5,10 @@ use crate::audio::play_sound;
 use crate::cooldown::*;
 use crate::velocity::*;
 
+#[derive(Copy, Clone, Debug)]
 pub struct CameraInput;
 
+#[derive(Copy, Clone, Debug)]
 pub struct PlayerInput;
 
 #[derive(Default)]
@@ -19,40 +21,62 @@ pub struct MouseState {
 
 const ROTATION_RATE: f32 = 0.002;
 
+// type CameraQuery = Query<(&CameraInput, &mut Transform)>;
+// type PlayerQuery = Query<(&PlayerInput, &mut Transform)>;
+
 pub fn mouse_input_update(
     mut state: Local<MouseState>,
     mouse_motion_events: Res<Events<MouseMotion>>,
-    mut camera_query: Query<(&CameraInput, &mut Transform)>,
-    mut player_query: Query<(&PlayerInput, &mut Transform)>,
+    // mut queries: QuerySet<(CameraQuery, PlayerQuery)>,
+    mut queries: QuerySet<
+            (
+                Query<(&PlayerInput, &mut Transform)>,
+                Query<(&CameraInput, &mut Transform)>)
+            >
+    // mut camera_query: ,
+    // mut player_query: Query<(&PlayerInput, &mut Transform)>,
 ) {
-    for (_, mut player_transform) in player_query.iter_mut() {
-        for (_, mut camera_transform) in camera_query.iter_mut() {
-            camera_transform.translation = Vec3::zero();
+    let mut player_transform_copy = Transform::from_translation(Vec3::zero());
+    for (_, mut player_transform) in queries.q1_mut().iter_mut() {
+        player_transform.translation = Vec3::zero();
 
-            let quat = player_transform.rotation;
-            let rotation_mat = Mat3::from_quat(quat);
+        let quat = player_transform.rotation;
+        let rotation_mat = Mat3::from_quat(quat);
 
-            let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
+        let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
 
-            for MouseMotion { delta } in mouse_motion_events {
-                let yaw_magnitude = -ROTATION_RATE * delta.y;
-                let pitch_magnitude = -ROTATION_RATE * delta.x;
+        for MouseMotion { delta } in mouse_motion_events {
+            let yaw_magnitude = -ROTATION_RATE * delta.y;
+            let pitch_magnitude = -ROTATION_RATE * delta.x;
 
-                let yaw = Quat::from_axis_angle(rotation_mat.x_axis, yaw_magnitude);
-                let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
+            let yaw = Quat::from_axis_angle(rotation_mat.x_axis, yaw_magnitude);
+            let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
 
-                player_transform.rotation = yaw * pitch * player_transform.rotation;
-                player_transform.rotation = player_transform.rotation.normalize();
-            }
-
-            camera_transform.rotation = player_transform.rotation;
-
-            let forward = player_transform.forward();
-            let up = player_transform.rotation * Vec3::unit_y();
-            camera_transform.translation = player_transform.translation + forward * 10.0 + up * 2.5;
+            player_transform.rotation = yaw * pitch * player_transform.rotation;
         }
+        player_transform.rotation = player_transform.rotation.normalize();
+
+        player_transform_copy = player_transform.clone();
+    }
+
+    let player_transform = &player_transform_copy;
+    for (_, mut camera_transform) in queries.q1_mut().iter_mut() {
+
+        camera_transform.rotation = player_transform.rotation;
+
+        let forward = player_transform.forward();
+        let up = player_transform.rotation * Vec3::unit_y();
+        camera_transform.translation = player_transform.translation + forward * 10.0 + up * 2.5;
     }
 }
+
+// pub fn mouse_input_update_player(
+//     mut state: Local<MouseState>,
+//     mouse_motion_events: Res<Events<MouseMotion>>,
+//     camera_query: Query<(&CameraInput, &Transform)>,
+//     mut player_query: Query<(&PlayerInput, &mut Transform)>,
+// ) {
+// }
 
 const THRUSTER_SOUND_DURATION: f64 = 2.5;
 
