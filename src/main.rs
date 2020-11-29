@@ -5,6 +5,7 @@ mod asteroids;
 use crate::asteroids::*;
 mod audio;
 use crate::audio::*;
+mod bullets;
 mod collision;
 mod cooldown;
 use crate::collision::*;
