@@ -4,7 +4,19 @@ use crate::velocity::Velocity;
 
 pub struct MotionTrailPlugin;
 
+const RESPAWN_RATE:f32 = 0.2;
+const TRAIL_SIZE:f32 = 0.05;
+const MAX_TRAIL_DIST:f32 = 10.0;
 
+struct TrailManagement {
+    reset_timer: Timer 
+}
+
+impl TrailManagement {
+    fn new() -> TrailManagement {
+        TrailManagement{ reset_timer: Timer::from_seconds(RESPAWN_RATE,true)}
+    }
+}
 
 struct TrailObj
 {
@@ -17,6 +29,7 @@ impl Plugin for MotionTrailPlugin
     fn build(&self, app: &mut AppBuilder)
     {
         app.add_startup_system(setup_trail)
+            .add_resource(TrailManagement::new())
             .add_system(update_trail);
     }
     // span 1 quad, re-draw very 60ms
@@ -48,7 +61,7 @@ fn setup_trail(commands: &mut Commands,
         flip: false
     }));*/
     let trail_mesh = meshes.add(Mesh::from(shape::Cube {
-        size: 0.05
+        size: TRAIL_SIZE
     }));
     make_trail_obj(commands, &trail_material, &trail_mesh, 45.0);
     make_trail_obj(commands, &trail_material, &trail_mesh, -45.0);
@@ -62,10 +75,18 @@ fn build_trail_quat(velocity: &Vec3) -> Quat {
     return Quat::from_axis_angle(quat_vector, quat_angle);
 }
 
+
+const MAX_TRAIL_DIST_SQ:f32 = MAX_TRAIL_DIST * MAX_TRAIL_DIST;
+
 fn update_trail(
+    time : Res<Time>,
+    mut trail_mgr : ResMut<TrailManagement>,
     mut trail_query : Query<(&TrailObj, &mut Transform)>,
     player_query : Query<(&PlayerInput, &Transform, &Velocity)>
 ) {
+    trail_mgr.reset_timer.tick(time.delta_seconds);
+    
+    //let respwan = trail_mgr.reset_timer.just_finished();
 
     for (_, player_transform, velocity_info) in player_query.iter() {
         let player_up = player_transform.rotation * Vec3::unit_y();
@@ -74,16 +95,21 @@ fn update_trail(
         //let player_velocity_dir = velocity_info.velocity.clone().normalize();
         let trail_quat = build_trail_quat(&velocity_info.velocity);
         for (trail_info, mut transform) in trail_query.iter_mut() {
-            // get player position and 
 
-            //let transform_copy = player_transform.clone();
-            
-            //let prev_translation = transform.clone();
-            let rotation_quat = Quat::from_axis_angle(player_forward, trail_info.angle);
-            let offset_direction = rotation_quat.mul_vec3(player_up);
+            let vector_from_player = transform.translation - player_transform.translation;
+            //let respawn:bool = ;
+
+            let new_translation = 
+                if vector_from_player.length_squared() > MAX_TRAIL_DIST_SQ {
+                    let rotation_quat = Quat::from_axis_angle(player_forward, trail_info.angle);
+                    let offset_direction = rotation_quat.mul_vec3(player_up);
+                    player_transform.translation + offset_direction * trail_info.radial_offset
+                } else {
+                    transform.translation
+                };
 
             *transform = Transform{
-                translation: player_transform.translation + offset_direction * trail_info.radial_offset,
+                translation: new_translation,
                 rotation: trail_quat,
                 scale: Vec3::new(player_velocity, 1.0, 1.0),
             };
