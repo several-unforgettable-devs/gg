@@ -52,7 +52,7 @@ pub fn fire_bullet(
         .with(Collision {
             mass: BULLET_MASS,
             radius: BULLET_RADIUS,
-            ctype: EntityType::Bullet,
+            etype: EntityType::Bullet,
         })
         .with(Velocity {
             velocity: bullet_velocity,

@@ -10,7 +10,7 @@ use crate::GameState;
 pub struct Collision {
     pub mass: f32,
     pub radius: f32,
-    pub ctype: EntityType,
+    pub etype: EntityType,
 }
 
 const COLLISION_SPRING_CONSTANT: f32 = 2048.;
@@ -132,12 +132,12 @@ fn collision_gameplay_logic(
     obj_b: &CollisionData,
 ) {
     // Order the objects by collision type to reduce the number of permutations
-    let obj1 = if obj_a.collision.ctype <= obj_b.collision.ctype {
+    let obj1 = if obj_a.collision.etype <= obj_b.collision.etype {
         &obj_a
     } else {
         &obj_b
     };
-    let obj2 = if obj_a.collision.ctype <= obj_b.collision.ctype {
+    let obj2 = if obj_a.collision.etype <= obj_b.collision.etype {
         &obj_b
     } else {
         &obj_a
@@ -146,7 +146,7 @@ fn collision_gameplay_logic(
     // NOTE: Definitely could be less duplication in this collision code,
     // but it's a game jam and there many more features to implement
 
-    match (obj1.collision.ctype, obj2.collision.ctype) {
+    match (obj1.collision.etype, obj2.collision.etype) {
         (EntityType::Asteroid, EntityType::Asteroid) => (),
         (EntityType::Asteroid, EntityType::Earth) => (),
         (EntityType::Asteroid, EntityType::Player) => {

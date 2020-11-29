@@ -107,7 +107,7 @@ fn add_ship(commands: &mut Commands, asset_server: Res<AssetServer>, position: V
         .with(Collision {
             mass: 4.,
             radius: 2.,
-            ctype: EntityType::Player,
+            etype: EntityType::Player,
         })
         .with(Velocity::default());
 }
@@ -136,7 +136,7 @@ fn add_earth(
         .with(Collision {
             mass: earth_mass,
             radius: earth_radius,
-            ctype: EntityType::Earth,
+            etype: EntityType::Earth,
         })
         .with(Velocity::default());
 }
