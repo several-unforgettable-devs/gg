@@ -111,6 +111,10 @@ const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID: f32 = 3.;
 const LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED: f32 =
     LETHAL_RELATIVE_VELOCITY_OF_ASTEROID * LETHAL_RELATIVE_VELOCITY_OF_ASTEROID;
 
+const LETHAL_RELATIVE_VELOCITY_OF_BULLET: f32 = 10.;
+const LETHAL_RELATIVE_VELOCITY_OF_BULLET_SQUARED: f32 =
+    LETHAL_RELATIVE_VELOCITY_OF_BULLET * LETHAL_RELATIVE_VELOCITY_OF_BULLET;
+
 // Objects parameters to collision_gameplay_logic are ordered by collision type
 // to reduce the number of permutations
 fn collision_gameplay_logic(
@@ -139,6 +143,9 @@ fn collision_gameplay_logic(
         &obj_a
     };
 
+    // NOTE: Definitely could be less duplication in this collision code,
+    // but it's a game jam and there many more features to implement
+
     match (obj1.collision.ctype, obj2.collision.ctype) {
         (EntityType::Asteroid, EntityType::Asteroid) => (),
         (EntityType::Asteroid, EntityType::Earth) => (),
@@ -163,6 +170,33 @@ fn collision_gameplay_logic(
             play_sound(asset_server, audio, "audio/GameWin.mp3");
             println!("YOU WIN!!");
             *game_state = GameState::Won;
+        }
+        (EntityType::Bullet, EntityType::Player) => {
+            let relative_velocity = obj1.velocity - obj2.velocity;
+            let relative_speed_squared = relative_velocity.length_squared();
+
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_BULLET_SQUARED {
+                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+                commands.despawn(obj1.entity);
+                commands.despawn(obj2.entity);
+                *game_state = GameState::Lost;
+            } else if collision_sound_cooldown.over(&time) {
+                play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
+                collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
+            }
+        }
+        (EntityType::Bullet, EntityType::Alien) => {
+            let relative_velocity = obj1.velocity - obj2.velocity;
+            let relative_speed_squared = relative_velocity.length_squared();
+
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_BULLET_SQUARED {
+                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+                commands.despawn(obj1.entity);
+                commands.despawn(obj2.entity);
+            } else if collision_sound_cooldown.over(&time) {
+                play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
+                collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
+            }
         }
 
         // All ordered collision permutations have already been handled
