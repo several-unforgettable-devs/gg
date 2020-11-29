@@ -56,52 +56,6 @@ pub const PLAYER_WEAPON_COOLDOWN_DURATION: f64 = 0.8;
 
 pub const PLAYER_BARREL_LENGTH: f32 = 1.2 * crate::PLAYER_SHIP_RADIUS;
 
-// pub fn mouse_button_input_update(
-//     // Systems needed to spawn bullets
-//     commands: &mut Commands,
-//     meshes: &mut ResMut<Assets<Mesh>>,
-//     materials: &mut ResMut<Assets<StandardMaterial>>,
-
-//     // For bullet sound effects
-//     asset_server: Res<AssetServer>,
-//     audio: Res<Audio>,
-
-//     // For input
-//     time: Res<Time>,
-//     mouse_button_input: Res<Input<MouseButton>>,
-
-//     mut player_weapon_cooldown: Local<Cooldown>,
-
-//     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
-// ) {
-//     for (_, transform, velocity) in player_query.iter_mut() {
-
-//         let player_position = transform.translation;
-//         let player_velocity = velocity.velocity;
-
-//         let quat = transform.rotation;
-//         let rotation_mat = Mat3::from_quat(quat);
-
-//         // player is looking down the negative-z axis
-//         let player_facing = -rotation_mat.z_axis;
-
-//         if mouse_button_input.pressed(MouseButton::Left) && player_weapon_cooldown.over(&time) {
-//             fire_bullet(
-//                 commands,
-//                 meshes,
-//                 materials,
-//                 asset_server,
-//                 audio,
-//                 player_position,
-//                 player_velocity,
-//                 player_facing,
-//                 PLAYER_BARREL_LENGTH
-//             );
-//             player_weapon_cooldown.reset(&time, PLAYER_WEAPON_COOLDOWN_DURATION);
-//         }
-//     }
-// }
-
 pub fn mouse_button_input_update(
     // Systems needed to spawn bullets
     commands: &mut Commands,
