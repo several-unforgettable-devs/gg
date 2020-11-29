@@ -56,9 +56,15 @@ pub enum GameState {
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum EntityType {
+    // Passive objects
     Asteroid,
-    Bullet,
     Earth,
+
+    // Projectiles
+    Bullet,
+
+    // Ships
+    Alien,
     Player,
 }
 
