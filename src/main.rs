@@ -23,16 +23,26 @@ fn main() {
         .add_resource(Msaa { samples: 4 })
         .add_resource(GameState::Running)
         .add_plugins(DefaultPlugins)
+
+        // Startup
         .add_startup_system(setup)
         .add_startup_system(setup_audio)
         .add_startup_system(infotext_system)
+
+        // Input
         .add_system(keyboard_input_update)
-        .add_system(mouse_input_update)
+        .add_system(mouse_button_input_update)
+        .add_system(mouse_move_input_update)
+
+        // Gameplay simulation
         .add_system(velocity_update)
         .add_system(collision_update)
         .add_system(gravity_update)
+
+        // Visuals/UI
         .add_system(change_text_system)
         .add_system(skybox_update)
+
         .run();
 }
 
