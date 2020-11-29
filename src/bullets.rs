@@ -43,7 +43,7 @@ pub fn fire_bullet(
                 radius: BULLET_RADIUS,
                 ..Default::default()
             })),
-            material: materials.add(Color::rgb(0.2, 0.2, 1.0).into()),
+            material: materials.add(Color::rgb(1.0, 0.2, 0.2).into()),
             transform: Transform::from_translation(bullet_position),
             ..Default::default()
         })
