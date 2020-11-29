@@ -13,7 +13,6 @@ pub const BULLET_RADIUS: f32 = 0.1;
 pub const BULLET_MASS: f32 = 0.1;
 
 pub fn fire_bullet(
-
     // Systems needed to spawn the bullet
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -27,7 +26,7 @@ pub fn fire_bullet(
     shooter_position: Vec3,
     shooter_velocity: Vec3,
     shooter_facing: Vec3,
-    shooter_barrel_length: Vec3,
+    shooter_barrel_length: f32,
 ) {
     play_sound(
         &asset_server,
@@ -54,6 +53,7 @@ pub fn fire_bullet(
             radius: BULLET_RADIUS,
             ctype: EntityType::Earth,
         })
-        .with(Velocity{velocity: bullet_velocity});
+        .with(Velocity {
+            velocity: bullet_velocity,
+        });
 }
-
