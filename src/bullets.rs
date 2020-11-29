@@ -31,7 +31,7 @@ pub fn fire_bullet(
     play_sound(
         &asset_server,
         &audio,
-        "audio/AmbientThrusterLoopShortened.mp3",
+        "audio/LaserShot.mp3",
     );
 
     let bullet_velocity = shooter_velocity + RELATIVE_BULLET_SPEED * shooter_facing;
