@@ -17,6 +17,7 @@ mod input;
 use crate::input::*;
 mod velocity;
 use crate::velocity::*;
+mod trail;
 
 fn main() {
     App::build()
@@ -42,7 +43,11 @@ fn main() {
         // Visuals/UI
         .add_system(change_text_system)
         .add_system(skybox_update)
+        // 
+        // Trail
+        .add_plugin(trail::MotionTrailPlugin)
         .run();
+        
 }
 
 #[allow(dead_code)]
@@ -112,7 +117,6 @@ fn add_ship(commands: &mut Commands, asset_server: Res<AssetServer>, position: V
         .with(Velocity::default());
 }
 
-struct EarthMarker;
 fn add_earth(
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -131,7 +135,6 @@ fn add_earth(
             transform: Transform::from_translation(position),
             ..Default::default()
         })
-        .with(EarthMarker)
         .with(Gravity { mass: earth_mass })
         .with(Collision {
             mass: earth_mass,
