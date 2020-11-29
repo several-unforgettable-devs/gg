@@ -17,7 +17,26 @@ pub struct MouseState {
 
 const ROTATION_RATE: f32 = 0.002;
 
+fn set_cursor_capture(windows: &mut ResMut<Windows>, cursor_captured: bool) {
+    match windows.get_primary_mut() {
+        Some(window) => {
+            window.set_cursor_lock_mode(cursor_captured);
+            window.set_cursor_visibility(!cursor_captured);
+        }
+        _ => (),
+    }
+}
+
+fn get_cursor_capture(windows: &ResMut<Windows>) -> bool {
+    match windows.get_primary() {
+        Some(window) => window.cursor_locked(),
+        _ => false,
+    }
+}
+
 pub fn mouse_move_input_update(
+    windows: ResMut<Windows>,
+
     mut state: Local<MouseState>,
     mouse_motion_events: Res<Events<MouseMotion>>,
     mut camera_query: Query<(&CameraInput, &mut Transform)>,
@@ -25,22 +44,24 @@ pub fn mouse_move_input_update(
 ) {
     for (_, mut player_transform) in player_query.iter_mut() {
         for (_, mut camera_transform) in camera_query.iter_mut() {
-            camera_transform.translation = Vec3::zero();
 
-            let quat = player_transform.rotation;
-            let rotation_mat = Mat3::from_quat(quat);
+            if get_cursor_capture(&windows) {
+                let quat = player_transform.rotation;
+                let rotation_mat = Mat3::from_quat(quat);
 
-            let mouse_motion_events = state.mouse_motion_event_reader.iter(&mouse_motion_events);
+                let mouse_motion_events =
+                    state.mouse_motion_event_reader.iter(&mouse_motion_events);
 
-            for MouseMotion { delta } in mouse_motion_events {
-                let yaw_magnitude = -ROTATION_RATE * delta.y;
-                let pitch_magnitude = -ROTATION_RATE * delta.x;
+                for MouseMotion { delta } in mouse_motion_events {
+                    let yaw_magnitude = -ROTATION_RATE * delta.y;
+                    let pitch_magnitude = -ROTATION_RATE * delta.x;
 
-                let yaw = Quat::from_axis_angle(rotation_mat.x_axis, yaw_magnitude);
-                let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
+                    let yaw = Quat::from_axis_angle(rotation_mat.x_axis, yaw_magnitude);
+                    let pitch = Quat::from_axis_angle(rotation_mat.y_axis, pitch_magnitude);
 
-                player_transform.rotation = yaw * pitch * player_transform.rotation;
-                player_transform.rotation = player_transform.rotation.normalize();
+                    player_transform.rotation = yaw * pitch * player_transform.rotation;
+                    player_transform.rotation = player_transform.rotation.normalize();
+                }
             }
 
             camera_transform.rotation = player_transform.rotation;
@@ -68,23 +89,30 @@ pub fn mouse_button_input_update(
 
     // For input
     time: Res<Time>,
+    mut windows: ResMut<Windows>,
     mouse_button_input: Res<Input<MouseButton>>,
 
     mut player_weapon_cooldown: Local<Cooldown>,
 
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
 ) {
-    for (_, transform, velocity) in player_query.iter_mut() {
-        let player_position = transform.translation;
-        let player_velocity = velocity.velocity;
+    let lmb_pressed = mouse_button_input.pressed(MouseButton::Left);
+    if lmb_pressed && !get_cursor_capture(&windows) {
+        set_cursor_capture(&mut windows, true);
+        return;
+    }
 
-        let quat = transform.rotation;
-        let rotation_mat = Mat3::from_quat(quat);
+    if lmb_pressed && player_weapon_cooldown.over(&time) {
+        for (_, transform, velocity) in player_query.iter_mut() {
+            let player_position = transform.translation;
+            let player_velocity = velocity.velocity;
 
-        // player is looking down the negative-z axis
-        let player_facing = -rotation_mat.z_axis;
+            let quat = transform.rotation;
+            let rotation_mat = Mat3::from_quat(quat);
 
-        if mouse_button_input.pressed(MouseButton::Left) && player_weapon_cooldown.over(&time) {
+            // player is looking down the negative-z axis
+            let player_facing = -rotation_mat.z_axis;
+
             fire_bullet(
                 commands,
                 &mut meshes,
@@ -106,7 +134,8 @@ const THRUSTER_SOUND_DURATION: f64 = 2.5;
 pub fn keyboard_input_update(
     // For input
     time: Res<Time>,
-    keyboard_input: Res<Input<KeyCode>>,
+    mut windows: ResMut<Windows>,
+    key_input: Res<Input<KeyCode>>,
 
     // For thruster sound effects
     asset_server: Res<AssetServer>,
@@ -116,6 +145,26 @@ pub fn keyboard_input_update(
     camera_query: Query<(&CameraInput, &Transform)>,
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
 ) {
+    // Key bindings to return the cursor to the user
+    {
+        let escape_pressed = key_input.pressed(KeyCode::Escape);
+
+        let lwin_pressed = key_input.pressed(KeyCode::LWin);
+        let rwin_pressed = key_input.pressed(KeyCode::RWin);
+        let win_pressed = lwin_pressed || rwin_pressed;
+
+        let lalt_pressed = key_input.pressed(KeyCode::LAlt);
+        let ralt_pressed = key_input.pressed(KeyCode::RAlt);
+        let alt_pressed = lalt_pressed || ralt_pressed;
+
+        let tab_pressed = key_input.pressed(KeyCode::Tab);
+        let alt_tab_pressed = alt_pressed && tab_pressed;
+
+        if escape_pressed || win_pressed || alt_tab_pressed {
+            set_cursor_capture(&mut windows, false);
+        }
+    }
+
     for (_, transform) in camera_query.iter() {
         let quat = transform.rotation;
         let rotation_mat = Mat3::from_quat(quat);
@@ -125,11 +174,11 @@ pub fn keyboard_input_update(
 
         for (_, _transform, mut velocity) in player_query.iter_mut() {
             let mut acceleration = 0.0;
-            if keyboard_input.pressed(KeyCode::W) {
+            if key_input.pressed(KeyCode::W) {
                 acceleration += 10.0;
             }
 
-            if keyboard_input.pressed(KeyCode::S) {
+            if key_input.pressed(KeyCode::S) {
                 acceleration -= 10.0;
             }
 
