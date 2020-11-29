@@ -19,8 +19,8 @@ pub fn fire_bullet(
     materials: &mut ResMut<Assets<StandardMaterial>>,
 
     // To play sound effect
-    asset_server: Res<AssetServer>,
-    audio: Res<Audio>,
+    asset_server: &Res<AssetServer>,
+    audio: &Res<Audio>,
 
     // Info to spawn the bullet
     shooter_position: Vec3,
@@ -47,6 +47,7 @@ pub fn fire_bullet(
             transform: Transform::from_translation(bullet_position),
             ..Default::default()
         })
+        .with(Bullet)
         .with(Gravity { mass: BULLET_MASS })
         .with(Collision {
             mass: BULLET_MASS,

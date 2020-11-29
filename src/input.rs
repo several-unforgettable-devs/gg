@@ -2,6 +2,7 @@ use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 
 use crate::audio::play_sound;
+use crate::bullets::*;
 use crate::cooldown::*;
 use crate::velocity::*;
 
@@ -11,15 +12,12 @@ pub struct PlayerInput;
 
 #[derive(Default)]
 pub struct MouseState {
-    // mouse_button_event_reader: EventReader<MouseButtonInput>,
     mouse_motion_event_reader: EventReader<MouseMotion>,
-    // cursor_moved_event_reader: EventReader<CursorMoved>,
-    // mouse_wheel_event_reader: EventReader<MouseWheel>,
 }
 
 const ROTATION_RATE: f32 = 0.002;
 
-pub fn mouse_input_update(
+pub fn mouse_move_input_update(
     mut state: Local<MouseState>,
     mouse_motion_events: Res<Events<MouseMotion>>,
     mut camera_query: Query<(&CameraInput, &mut Transform)>,
@@ -50,6 +48,101 @@ pub fn mouse_input_update(
             let forward = player_transform.forward();
             let up = player_transform.rotation * Vec3::unit_y();
             camera_transform.translation = player_transform.translation + forward * 10.0 + up * 2.5;
+        }
+    }
+}
+
+pub const PLAYER_WEAPON_COOLDOWN_DURATION: f64 = 0.8;
+
+pub const PLAYER_BARREL_LENGTH: f32 = 1.2 * crate::PLAYER_SHIP_RADIUS;
+
+// pub fn mouse_button_input_update(
+//     // Systems needed to spawn bullets
+//     commands: &mut Commands,
+//     meshes: &mut ResMut<Assets<Mesh>>,
+//     materials: &mut ResMut<Assets<StandardMaterial>>,
+
+//     // For bullet sound effects
+//     asset_server: Res<AssetServer>,
+//     audio: Res<Audio>,
+
+//     // For input
+//     time: Res<Time>,
+//     mouse_button_input: Res<Input<MouseButton>>,
+
+//     mut player_weapon_cooldown: Local<Cooldown>,
+
+//     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
+// ) {
+//     for (_, transform, velocity) in player_query.iter_mut() {
+
+//         let player_position = transform.translation;
+//         let player_velocity = velocity.velocity;
+
+//         let quat = transform.rotation;
+//         let rotation_mat = Mat3::from_quat(quat);
+
+//         // player is looking down the negative-z axis
+//         let player_facing = -rotation_mat.z_axis;
+
+//         if mouse_button_input.pressed(MouseButton::Left) && player_weapon_cooldown.over(&time) {
+//             fire_bullet(
+//                 commands,
+//                 meshes,
+//                 materials,
+//                 asset_server,
+//                 audio,
+//                 player_position,
+//                 player_velocity,
+//                 player_facing,
+//                 PLAYER_BARREL_LENGTH
+//             );
+//             player_weapon_cooldown.reset(&time, PLAYER_WEAPON_COOLDOWN_DURATION);
+//         }
+//     }
+// }
+
+pub fn mouse_button_input_update(
+    // Systems needed to spawn bullets
+    commands: &mut Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+
+    // For bullet sound effects
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+
+    // For input
+    time: Res<Time>,
+    mouse_button_input: Res<Input<MouseButton>>,
+
+    mut player_weapon_cooldown: Local<Cooldown>,
+
+    mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
+) {
+    for (_, transform, velocity) in player_query.iter_mut() {
+        let player_position = transform.translation;
+        let player_velocity = velocity.velocity;
+
+        let quat = transform.rotation;
+        let rotation_mat = Mat3::from_quat(quat);
+
+        // player is looking down the negative-z axis
+        let player_facing = -rotation_mat.z_axis;
+
+        if mouse_button_input.pressed(MouseButton::Left) && player_weapon_cooldown.over(&time) {
+            fire_bullet(
+                commands,
+                &mut meshes,
+                &mut materials,
+                &asset_server,
+                &audio,
+                player_position,
+                player_velocity,
+                player_facing,
+                PLAYER_BARREL_LENGTH,
+            );
+            player_weapon_cooldown.reset(&time, PLAYER_WEAPON_COOLDOWN_DURATION);
         }
     }
 }
