@@ -8,9 +8,9 @@ use crate::velocity::*;
 struct Bullet;
 
 // Relative to the shooter
-pub const RELATIVE_BULLET_SPEED: f32 = 40.;
-pub const BULLET_RADIUS: f32 = 0.1;
-pub const BULLET_MASS: f32 = 0.1;
+pub const RELATIVE_BULLET_SPEED: f32 = 60.;
+pub const BULLET_RADIUS: f32 = 0.15;
+pub const BULLET_MASS: f32 = 0.15;
 
 pub fn fire_bullet(
     // Systems needed to spawn the bullet
@@ -28,7 +28,7 @@ pub fn fire_bullet(
     shooter_facing: Vec3,
     shooter_barrel_length: f32,
 ) {
-    play_sound(&asset_server, &audio, "audio/LaserShot.mp3");
+    play_sound(&asset_server, &audio, "audio/Laser3.mp3");
 
     let bullet_velocity = shooter_velocity + RELATIVE_BULLET_SPEED * shooter_facing;
     let bullet_position = shooter_position + shooter_barrel_length * shooter_facing;
