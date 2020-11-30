@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use rand::Rng;
 use crate::input::PlayerInput;
 use crate::velocity::Velocity;
+use crate::GameState;
 
 pub struct MotionTrailPlugin;
 
@@ -100,9 +101,15 @@ fn calc_trail_spawn_point(
 
 fn update_trail(
     mut trail_query : Query<(&TrailObj, &mut Transform)>,
-    player_query : Query<(&PlayerInput, &Transform, &Velocity)>
+    player_query : Query<(&PlayerInput, &Transform, &Velocity)>,
+    game_state : Res<GameState>,
 ) {
-    
+    if *game_state == GameState::Lost {
+        for (_, mut transform) in trail_query.iter_mut() {
+            transform.scale = Vec3::one();
+        }
+    }
+
     for (_, player_transform, velocity_info) in player_query.iter() {
         let player_up = player_transform.rotation * Vec3::unit_y();
         let player_velocity = velocity_info.velocity.length();

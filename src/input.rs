@@ -5,6 +5,7 @@ use crate::audio::play_sound;
 use crate::bullets::*;
 use crate::cooldown::*;
 use crate::velocity::*;
+use crate::GameState;
 
 pub struct CameraInput;
 
@@ -95,7 +96,13 @@ pub fn mouse_button_input_update(
     mut player_weapon_cooldown: Local<Cooldown>,
 
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
+
+    game_state: Res<GameState>,
 ) {
+    if *game_state != GameState::Running {
+        return;
+    }
+
     let lmb_pressed = mouse_button_input.pressed(MouseButton::Left);
     if lmb_pressed && !get_cursor_capture(&windows) {
         set_cursor_capture(&mut windows, true);
@@ -145,7 +152,11 @@ pub fn keyboard_input_update(
 
     camera_query: Query<(&CameraInput, &Transform)>,
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
+
+    game_state : Res<GameState>,
 ) {
+    
+
     // Key bindings to return the cursor to the user
     {
         let escape_pressed = key_input.pressed(KeyCode::Escape);
@@ -164,6 +175,10 @@ pub fn keyboard_input_update(
         if escape_pressed || win_pressed || alt_tab_pressed {
             set_cursor_capture(&mut windows, false);
         }
+    }
+
+    if *game_state != GameState::Running {
+        return;
     }
 
     use crate::KeyboardLayout::*;
