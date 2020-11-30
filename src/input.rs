@@ -103,7 +103,7 @@ pub fn mouse_button_input_update(
         return;
     }
 
-    let lmb_pressed = mouse_button_input.pressed(MouseButton::Left);
+    let lmb_pressed = mouse_button_input.just_pressed(MouseButton::Left);
     if lmb_pressed && !get_cursor_capture(&windows) {
         set_cursor_capture(&mut windows, true);
         return;
