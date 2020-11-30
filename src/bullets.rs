@@ -8,9 +8,9 @@ use crate::velocity::*;
 struct Bullet;
 
 // Relative to the shooter
-pub const RELATIVE_BULLET_SPEED: f32 = 40.;
-pub const BULLET_RADIUS: f32 = 0.1;
-pub const BULLET_MASS: f32 = 0.1;
+pub const RELATIVE_BULLET_SPEED: f32 = 60.;
+pub const BULLET_RADIUS: f32 = 0.15;
+pub const BULLET_MASS: f32 = 0.15;
 
 pub fn fire_bullet(
     // Systems needed to spawn the bullet
