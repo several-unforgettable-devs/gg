@@ -55,7 +55,6 @@ pub fn add_asteroids(
         let asteroid_mass = asteroid_radius * asteroid_radius;
 
         let asteroid_distance = asteroid_position.length();
-        // let asteroid_max_spawn_distance_squared = asteroid_max_spawn_distance * asteroid_max_spawn_distance;
 
         commands
             .spawn(PbrBundle {
