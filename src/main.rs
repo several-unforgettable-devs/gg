@@ -1,3 +1,5 @@
+use std::env;
+
 use bevy::prelude::*;
 use bevy::render::camera::PerspectiveProjection;
 
@@ -19,10 +21,25 @@ mod velocity;
 use crate::velocity::*;
 mod trail;
 
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub enum KeyboardLayout {
+    QWERTY,
+    Colemak,
+}
+
 fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    let keyboard_layout = if args.contains(&String::from("-colemak")) {
+        KeyboardLayout::Colemak
+    } else {
+        KeyboardLayout::QWERTY
+    };
+
     App::build()
         .add_resource(Msaa { samples: 4 })
         .add_resource(GameState::Running)
+        .add_resource(keyboard_layout)
         .add_plugins(DefaultPlugins)
         //
         // Startup
