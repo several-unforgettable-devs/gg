@@ -136,6 +136,7 @@ pub fn keyboard_input_update(
     time: Res<Time>,
     mut windows: ResMut<Windows>,
     key_input: Res<Input<KeyCode>>,
+    keyboard_layout: Res<crate::KeyboardLayout>,
 
     // For thruster sound effects
     asset_server: Res<AssetServer>,
@@ -165,24 +166,43 @@ pub fn keyboard_input_update(
         }
     }
 
+    use crate::KeyboardLayout::*;
+    let key_forward = KeyCode::W;
+    let key_backward = match *keyboard_layout {
+        QWERTY => KeyCode::S,
+        Colemak => KeyCode::R,
+    };
+    let key_left = KeyCode::A;
+    let key_right = match *keyboard_layout {
+        QWERTY => KeyCode::D,
+        Colemak => KeyCode::S,
+    };
+
     for (_, transform) in camera_query.iter() {
         let quat = transform.rotation;
         let rotation_mat = Mat3::from_quat(quat);
 
         // Camera is looking down the negative-z axis
         let forward = -rotation_mat.z_axis;
+        let left = -rotation_mat.x_axis;
 
         for (_, _transform, mut velocity) in player_query.iter_mut() {
-            let mut acceleration = 0.0;
-            if key_input.pressed(KeyCode::W) {
-                acceleration += 10.0;
+            // x-forward, y-left
+            let mut acceleration = Vec2::zero();
+            if key_input.pressed(key_forward) {
+                acceleration.x += 20.0;
+            }
+            if key_input.pressed(key_backward) {
+                acceleration.x -= 10.0;
+            }
+            if key_input.pressed(key_left) {
+                acceleration.y += 10.0;
+            }
+            if key_input.pressed(key_right) {
+                acceleration.y -= 10.0;
             }
 
-            if key_input.pressed(KeyCode::S) {
-                acceleration -= 10.0;
-            }
-
-            if acceleration != 0. && thruster_sound_cooldown.over(&time) {
+            if acceleration != Vec2::zero() && thruster_sound_cooldown.over(&time) {
                 play_sound(
                     &asset_server,
                     &audio,
@@ -191,7 +211,7 @@ pub fn keyboard_input_update(
                 thruster_sound_cooldown.reset(&time, THRUSTER_SOUND_DURATION);
             }
 
-            let delta_v = forward * acceleration * time.delta_seconds;
+            let delta_v = (forward * acceleration.x + left * acceleration.y) * time.delta_seconds;
             velocity.velocity += delta_v;
         }
     }
