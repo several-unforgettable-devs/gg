@@ -11,6 +11,8 @@ mod cooldown;
 use crate::collision::*;
 mod debug;
 use debug::{change_text_system, infotext_system};
+mod enemies;
+use crate::enemies::*;
 mod gravity;
 use crate::gravity::*;
 mod input;
@@ -18,6 +20,8 @@ use crate::input::*;
 mod velocity;
 use crate::velocity::*;
 mod trail;
+mod boid;
+use crate::boid::*;
 
 fn main() {
     App::build()
@@ -39,6 +43,7 @@ fn main() {
         .add_system(velocity_update)
         .add_system(collision_update)
         .add_system(gravity_update)
+        .add_system(boid_update)
         //
         // Visuals/UI
         .add_system(change_text_system)
@@ -87,7 +92,7 @@ fn skybox_update(
 }
 
 pub const PLAYER_SHIP_RADIUS: f32 = 2.;
-fn add_ship(commands: &mut Commands, asset_server: Res<AssetServer>, position: Vec3) {
+fn add_ship(commands: &mut Commands, asset_server: &Res<AssetServer>, position: Vec3) {
     let ship_mesh_handle =
         asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Mesh0/Primitive0");
 
@@ -177,7 +182,7 @@ fn setup(
         })
         .with(CameraInput);
 
-    add_ship(commands, asset_server, Vec3::new(0.0, 0.0, 100.0));
+    add_ship(commands, &asset_server, Vec3::new(0.0, 0.0, 100.0));
 
     add_earth(
         commands,
@@ -187,4 +192,5 @@ fn setup(
     );
 
     add_asteroids(commands, &mut meshes, &mut materials);
+    add_enemies(commands, &asset_server);
 }
