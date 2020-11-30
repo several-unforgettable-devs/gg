@@ -75,8 +75,7 @@ pub fn add_asteroids(
                 etype: EntityType::Asteroid,
             })
             .with(Velocity {
-                velocity: asteroid_rotation
-                    * asteroid_relative_tangential_speed
+                velocity: asteroid_rotation * asteroid_relative_tangential_speed
                     / asteroid_distance.sqrt(),
             });
     }

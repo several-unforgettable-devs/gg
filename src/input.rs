@@ -38,6 +38,8 @@ fn get_cursor_capture(windows: &ResMut<Windows>) -> bool {
 pub fn mouse_move_input_update(
     windows: ResMut<Windows>,
 
+    game_state: Res<GameState>,
+
     mut state: Local<MouseState>,
     mouse_motion_events: Res<Events<MouseMotion>>,
     mut camera_query: Query<(&CameraInput, &mut Transform)>,
@@ -45,8 +47,7 @@ pub fn mouse_move_input_update(
 ) {
     for (_, mut player_transform) in player_query.iter_mut() {
         for (_, mut camera_transform) in camera_query.iter_mut() {
-
-            if get_cursor_capture(&windows) {
+            if get_cursor_capture(&windows) && *game_state == GameState::Running {
                 let quat = player_transform.rotation;
                 let rotation_mat = Mat3::from_quat(quat);
 
@@ -97,15 +98,22 @@ pub fn mouse_button_input_update(
 
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
 
-    game_state: Res<GameState>,
+    mut game_state: ResMut<GameState>,
 ) {
-    if *game_state != GameState::Running {
-        return;
-    }
-
     let lmb_pressed = mouse_button_input.just_pressed(MouseButton::Left);
     if lmb_pressed && !get_cursor_capture(&windows) {
         set_cursor_capture(&mut windows, true);
+        return;
+    }
+
+    let cursor_captured = get_cursor_capture(&windows);
+    if cursor_captured && *game_state == GameState::Paused {
+        *game_state = GameState::Running;
+    } else if !cursor_captured && *game_state == GameState::Running {
+        *game_state = GameState::Paused;
+    }
+
+    if *game_state != GameState::Running {
         return;
     }
 
@@ -153,10 +161,8 @@ pub fn keyboard_input_update(
     camera_query: Query<(&CameraInput, &Transform)>,
     mut player_query: Query<(&PlayerInput, &Transform, &mut Velocity)>,
 
-    game_state : Res<GameState>,
+    game_state: Res<GameState>,
 ) {
-    
-
     // Key bindings to return the cursor to the user
     {
         let escape_pressed = key_input.pressed(KeyCode::Escape);

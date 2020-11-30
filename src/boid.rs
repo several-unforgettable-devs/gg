@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 
 use crate::velocity::*;
+use crate::GameState;
 
 #[derive(Clone, Copy, Default, PartialEq)]
-pub struct Boid {
-}
+pub struct Boid {}
 
 #[derive(Clone, Copy, PartialEq)]
 struct BoidData {
@@ -23,8 +23,13 @@ const BOID_SPEED_LIMIT: f32 = 10.0;
 
 pub fn boid_update(
     time: Res<Time>,
+    game_state: ResMut<GameState>,
     mut query: Query<(Entity, &Transform, &mut Velocity, &Boid)>,
 ) {
+    if *game_state != GameState::Running {
+        return;
+    }
+
     let mut boids: Vec<BoidData> = query
         .iter_mut()
         .map(|(e, t, v, b)| BoidData {
@@ -34,7 +39,7 @@ pub fn boid_update(
             boid: *b,
         })
         .collect();
-    
+
     let boid_count = boids.len();
 
     for i in 0..boid_count {
@@ -52,12 +57,7 @@ pub fn boid_update(
     }
 }
 
-fn cohere_boid_flock(
-    boids: &mut [BoidData],
-    boid_index: usize,
-    boid_count: usize,
-    time: &Time,
-) {
+fn cohere_boid_flock(boids: &mut [BoidData], boid_index: usize, boid_count: usize, time: &Time) {
     let mut boid_flock_center = Vec3::zero();
     let mut boid_flock_count = 0;
     for i in 0..boid_count {
@@ -70,7 +70,9 @@ fn cohere_boid_flock(
 
     if boid_flock_count > 0 {
         boid_flock_center *= 1.0 / boid_flock_count as f32;
-        boids[boid_index].velocity += (boid_flock_center - boids[boid_index].position) * BOID_COHERENCE_FACTOR * time.delta_seconds;
+        boids[boid_index].velocity += (boid_flock_center - boids[boid_index].position)
+            * BOID_COHERENCE_FACTOR
+            * time.delta_seconds;
     }
 }
 
@@ -90,7 +92,8 @@ fn avoid_neightbour_boids(
         }
     }
 
-    boids[boid_index].velocity += accumulated_avoidance * BOID_AVOIDANCE_FACTOR * time.delta_seconds;
+    boids[boid_index].velocity +=
+        accumulated_avoidance * BOID_AVOIDANCE_FACTOR * time.delta_seconds;
 }
 
 fn match_neighbour_boids_velocity(
@@ -111,17 +114,15 @@ fn match_neighbour_boids_velocity(
 
     if boid_flock_count > 0 {
         boid_flock_velocity *= 1.0 / boid_flock_count as f32;
-        boids[boid_index].velocity += (boid_flock_velocity - boids[boid_index].velocity) * BOID_VELOCITY_MATCHING_FACTOR * time.delta_seconds;
+        boids[boid_index].velocity += (boid_flock_velocity - boids[boid_index].velocity)
+            * BOID_VELOCITY_MATCHING_FACTOR
+            * time.delta_seconds;
     }
 }
 
-
-fn limit_boid_speed(
-    boids: &mut [BoidData],
-    boid_index: usize,
-    time: &Time,
-) {
+fn limit_boid_speed(boids: &mut [BoidData], boid_index: usize, time: &Time) {
     if boids[boid_index].velocity.length_squared() > BOID_SPEED_LIMIT * BOID_SPEED_LIMIT {
-        boids[boid_index].velocity = boids[boid_index].velocity.normalize() * BOID_SPEED_LIMIT * time.delta_seconds;
+        boids[boid_index].velocity =
+            boids[boid_index].velocity.normalize() * BOID_SPEED_LIMIT * time.delta_seconds;
     }
 }

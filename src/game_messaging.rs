@@ -1,29 +1,22 @@
-use bevy::prelude::*;
 use crate::GameState;
+use bevy::prelude::*;
 
 pub struct GameMessagePlugin;
 
 struct GameMessageState {
-    displayed: bool
+    displayed: bool,
 }
 
-impl Plugin for GameMessagePlugin
-{
-    fn build(&self, app: &mut AppBuilder)
-    {
+impl Plugin for GameMessagePlugin {
+    fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(setup_ui)
-            .add_resource(GameMessageState{ displayed: false })
+            .add_resource(GameMessageState { displayed: false })
             .add_system(update_ui);
-            
     }
     // span 1 quad, re-draw very 60ms
 }
 
-fn spawn_message(
-    commands: &mut Commands, 
-    asset_server: Res<AssetServer>,
-    message: String,
-) {
+fn spawn_message(commands: &mut Commands, asset_server: Res<AssetServer>, message: String) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn(TextBundle {
         style: Style {
@@ -43,8 +36,8 @@ fn spawn_message(
             style: TextStyle {
                 font_size: 80.0,
                 color: Color::WHITE,
-                alignment: TextAlignment{ 
-                    horizontal: HorizontalAlign::Center, 
+                alignment: TextAlignment {
+                    horizontal: HorizontalAlign::Center,
                     vertical: VerticalAlign::Top,
                 },
             },
@@ -60,7 +53,7 @@ fn setup_ui(commands: &mut Commands) {
 fn update_ui(
     mut message_state: ResMut<GameMessageState>,
     game_state: Res<GameState>,
-    commands: &mut Commands, 
+    commands: &mut Commands,
     asset_server: Res<AssetServer>,
 ) {
     if message_state.displayed {
@@ -69,7 +62,11 @@ fn update_ui(
 
     if *game_state == GameState::Lost {
         // spawn "Game Over"
-        spawn_message(commands, asset_server, String::from("You have brought shame to your family..."));
+        spawn_message(
+            commands,
+            asset_server,
+            String::from("You have brought shame to your family..."),
+        );
         message_state.displayed = true;
     } else if *game_state == GameState::Won {
         // spawn "You Win"

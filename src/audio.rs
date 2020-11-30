@@ -7,7 +7,6 @@ pub fn play_sound(asset_server: &Res<AssetServer>, audio: &Res<Audio>, sound_eff
     audio.play(sound_effect);
 }
 
-
 pub const SOUNDTRACK_DURATION: f64 = 0.8;
 pub fn play_soundtrack(
     asset_server: Res<AssetServer>,

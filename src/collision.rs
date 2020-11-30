@@ -29,7 +29,7 @@ pub fn collision_update(
 
     time: Res<Time>,
 
-    mut game_state: ResMut<crate::GameState>,
+    mut game_state: ResMut<GameState>,
 
     // For collision sound effects
     asset_server: Res<AssetServer>,
@@ -38,6 +38,10 @@ pub fn collision_update(
 
     mut query: Query<(Entity, &Transform, &mut Velocity, &Collision)>,
 ) {
+    if *game_state != GameState::Running {
+        return;
+    }
+
     let objects: Vec<CollisionData> = query
         .iter_mut()
         .map(|(e, t, v, c)| CollisionData {

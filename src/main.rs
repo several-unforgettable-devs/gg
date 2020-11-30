@@ -20,9 +20,9 @@ mod input;
 use crate::input::*;
 mod velocity;
 use crate::velocity::*;
-mod trail;
-mod game_messaging;
 mod boid;
+mod game_messaging;
+mod trail;
 use crate::boid::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
@@ -42,7 +42,7 @@ fn main() {
 
     App::build()
         .add_resource(Msaa { samples: 4 })
-        .add_resource(GameState::Running)
+        .add_resource(GameState::Paused)
         .add_resource(keyboard_layout)
         .add_plugins(DefaultPlugins)
         //
@@ -68,18 +68,17 @@ fn main() {
         // Visuals/UI
         //.add_system(change_text_system)
         .add_system(skybox_update)
-        // 
+        //
         // Trail
         .add_plugin(trail::MotionTrailPlugin)
-        // 
+        //
         // Game messaging
         .add_plugin(game_messaging::GameMessagePlugin)
         .run();
-        
 }
 
 #[allow(dead_code)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum GameState {
     Running,
     Paused,
@@ -135,7 +134,9 @@ fn add_ship(commands: &mut Commands, asset_server: &Res<AssetServer>, position: 
             ..Default::default()
         })
         .with(PlayerInput)
-        .with(Gravity { mass: PLAYER_SHIP_MASS })
+        .with(Gravity {
+            mass: PLAYER_SHIP_MASS,
+        })
         .with(Collision {
             mass: PLAYER_SHIP_MASS,
             radius: PLAYER_SHIP_RADIUS,

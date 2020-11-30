@@ -2,6 +2,7 @@ use bevy::math::*;
 use bevy::prelude::*;
 
 use crate::velocity::*;
+use crate::GameState;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Gravity {
@@ -19,8 +20,13 @@ pub const MIN_GRAVITATION_DISTANCE_SQUARED: f32 =
 
 pub fn gravity_update(
     time: Res<Time>,
+    game_state: ResMut<crate::GameState>,
     mut query: Query<(Entity, &Transform, &mut Velocity, &Gravity)>,
 ) {
+    if *game_state != GameState::Running {
+        return;
+    }
+
     let objects: Vec<(Entity, Vec3, Gravity)> = query
         .iter_mut()
         .map(|(e, t, _, g)| (e, t.translation, *g))

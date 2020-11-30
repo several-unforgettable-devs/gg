@@ -1,13 +1,14 @@
 use bevy::prelude::*;
 use rand::Rng;
 
-use crate::collision::*;
-use crate::velocity::*;
 use crate::boid::*;
+use crate::bullets::*;
+use crate::collision::*;
 use crate::cooldown::*;
 use crate::input::*;
-use crate::bullets::*;
+use crate::velocity::*;
 pub use crate::EntityType;
+use crate::GameState;
 
 pub const ENEMY_WEAPON_COOLDOWN_DURATION: f64 = 2.5;
 pub const ENEMY_BARREL_LENGTH: f32 = 1.2 * crate::PLAYER_SHIP_RADIUS;
@@ -29,6 +30,8 @@ struct EnemyData {
 pub fn enemies_update(
     commands: &mut Commands,
 
+    game_state: ResMut<GameState>,
+
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 
@@ -39,6 +42,10 @@ pub fn enemies_update(
     mut enemy_query: Query<(Entity, &mut Enemy, &Transform, &mut Velocity)>,
     mut player_query: Query<(&PlayerInput, &Transform)>,
 ) {
+    if *game_state != GameState::Running {
+        return;
+    }
+
     let enemies: Vec<EnemyData> = enemy_query
         .iter_mut()
         .map(|(ent, e, t, v)| EnemyData {
@@ -54,8 +61,11 @@ pub fn enemies_update(
             for (_, player_transform) in player_query.iter_mut() {
                 let player_position = player_transform.translation;
 
-                if (player_position - enemies[i].transform.translation).length() < ENEMY_TARGETING_DISTANCE {
-                    let enemy_facing = (player_position - enemies[i].transform.translation).normalize();
+                if (player_position - enemies[i].transform.translation).length()
+                    < ENEMY_TARGETING_DISTANCE
+                {
+                    let enemy_facing =
+                        (player_position - enemies[i].transform.translation).normalize();
                     fire_bullet(
                         commands,
                         &mut meshes,
@@ -70,7 +80,9 @@ pub fn enemies_update(
 
                     match enemy_query.get_component_mut::<Enemy>(enemies[i].entity) {
                         Ok(mut enemy) => {
-                            (*enemy).enemy_weapon_cooldown.reset(&time, ENEMY_WEAPON_COOLDOWN_DURATION);
+                            (*enemy)
+                                .enemy_weapon_cooldown
+                                .reset(&time, ENEMY_WEAPON_COOLDOWN_DURATION);
                         }
                         _ => (),
                     }
@@ -82,10 +94,7 @@ pub fn enemies_update(
     }
 }
 
-pub fn add_enemies(
-    commands: &mut Commands,
-    asset_server: &Res<AssetServer>,
-) {
+pub fn add_enemies(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     let mut rng = rand::thread_rng();
 
     let ship_scale = 2.;
@@ -102,7 +111,11 @@ pub fn add_enemies(
         }
 
         let swarm_span: i32 = ((swarm_count as f64).sqrt()) as i32;
-        let mut swarm_position = Vec3::new(rng.gen_range(-150.0, 150.0), rng.gen_range(-150.0, 150.0), rng.gen_range(-150.0, 150.0));
+        let mut swarm_position = Vec3::new(
+            rng.gen_range(-150.0, 150.0),
+            rng.gen_range(-150.0, 150.0),
+            rng.gen_range(-150.0, 150.0),
+        );
         let initial_swarm_position = swarm_position;
 
         for i in 0..swarm_count {
@@ -130,15 +143,18 @@ pub fn add_enemies(
                 })
                 .with(Boid::default())
                 .with(Enemy::default())
-                .with(Velocity { velocity: Vec3::new(rng.gen_range(-5.0, 5.0),
-                    rng.gen_range(-5.0, 5.0),
-                    rng.gen_range(-5.0, 5.0))});
-            
+                .with(Velocity {
+                    velocity: Vec3::new(
+                        rng.gen_range(-5.0, 5.0),
+                        rng.gen_range(-5.0, 5.0),
+                        rng.gen_range(-5.0, 5.0),
+                    ),
+                });
+
             if i % swarm_span == 0 {
                 swarm_position.y += 5.0;
                 swarm_position.x = initial_swarm_position.x;
-            }
-            else {
+            } else {
                 swarm_position.x += 5.0;
             }
         }
