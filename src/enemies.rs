@@ -4,7 +4,83 @@ use rand::Rng;
 use crate::collision::*;
 use crate::velocity::*;
 use crate::boid::*;
+use crate::cooldown::*;
+use crate::input::*;
+use crate::bullets::*;
 pub use crate::EntityType;
+
+pub const ENEMY_WEAPON_COOLDOWN_DURATION: f64 = 2.5;
+pub const ENEMY_BARREL_LENGTH: f32 = 1.2 * crate::PLAYER_SHIP_RADIUS;
+pub const ENEMY_TARGETING_DISTANCE: f32 = 50.0;
+
+#[derive(Clone, Copy, Default)]
+pub struct Enemy {
+    pub enemy_weapon_cooldown: Cooldown,
+}
+
+#[derive(Clone, Copy)]
+struct EnemyData {
+    entity: Entity,
+    enemy: Enemy,
+    transform: Transform,
+    velocity: Vec3,
+}
+
+pub fn enemies_update(
+    commands: &mut Commands,
+
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+
+    time: Res<Time>,
+    mut enemy_query: Query<(Entity, &mut Enemy, &Transform, &mut Velocity)>,
+    mut player_query: Query<(&PlayerInput, &Transform)>,
+) {
+    let enemies: Vec<EnemyData> = enemy_query
+        .iter_mut()
+        .map(|(ent, e, t, v)| EnemyData {
+            entity: ent,
+            enemy: *e,
+            transform: *t,
+            velocity: v.velocity,
+        })
+        .collect();
+
+    for i in 0..enemies.len() {
+        if enemies[i].enemy.enemy_weapon_cooldown.over(&time) {
+            for (_, player_transform) in player_query.iter_mut() {
+                let player_position = player_transform.translation;
+
+                if (player_position - enemies[i].transform.translation).length() < ENEMY_TARGETING_DISTANCE {
+                    let enemy_facing = (player_position - enemies[i].transform.translation).normalize();
+                    fire_bullet(
+                        commands,
+                        &mut meshes,
+                        &mut materials,
+                        &asset_server,
+                        &audio,
+                        enemies[i].transform.translation,
+                        enemies[i].velocity,
+                        enemy_facing,
+                        ENEMY_BARREL_LENGTH,
+                    );
+
+                    match enemy_query.get_component_mut::<Enemy>(enemies[i].entity) {
+                        Ok(mut enemy) => {
+                            (*enemy).enemy_weapon_cooldown.reset(&time, ENEMY_WEAPON_COOLDOWN_DURATION);
+                        }
+                        _ => (),
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+}
 
 pub fn add_enemies(
     commands: &mut Commands,
@@ -50,9 +126,10 @@ pub fn add_enemies(
                 .with(Collision {
                     mass: 4.,
                     radius: 2.,
-                    etype: EntityType::Asteroid,
+                    etype: EntityType::Alien,
                 })
                 .with(Boid::default())
+                .with(Enemy::default())
                 .with(Velocity { velocity: Vec3::new(rng.gen_range(-5.0, 5.0),
                     rng.gen_range(-5.0, 5.0),
                     rng.gen_range(-5.0, 5.0))});

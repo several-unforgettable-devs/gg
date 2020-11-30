@@ -60,6 +60,7 @@ fn main() {
         .add_system(velocity_update)
         .add_system(collision_update)
         .add_system(gravity_update)
+        .add_system(enemies_update)
         .add_system(boid_update)
         //
         // Visuals/UI

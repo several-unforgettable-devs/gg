@@ -49,8 +49,6 @@ pub fn boid_update(
             }
             _ => (),
         }
-
-        //println!("{}", boids[i].velocity);
     }
 }
 
