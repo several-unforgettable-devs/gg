@@ -52,7 +52,7 @@ pub fn add_asteroids(
 
         let asteroid_radius = rng.gen_range(asteroid_min_radius, asteroid_max_radius);
 
-        let asteroid_mass = asteroid_radius * asteroid_radius;
+        let asteroid_mass = asteroid_radius * asteroid_radius * 0.1;
 
         commands
             .spawn(PbrBundle {
