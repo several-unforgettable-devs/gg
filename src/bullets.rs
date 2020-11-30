@@ -28,7 +28,7 @@ pub fn fire_bullet(
     shooter_facing: Vec3,
     shooter_barrel_length: f32,
 ) {
-    play_sound(&asset_server, &audio, "audio/LaserShot.mp3");
+    play_sound(&asset_server, &audio, "audio/Laser3.mp3");
 
     let bullet_velocity = shooter_velocity + RELATIVE_BULLET_SPEED * shooter_facing;
     let bullet_position = shooter_position + shooter_barrel_length * shooter_facing;

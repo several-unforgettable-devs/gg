@@ -149,12 +149,24 @@ fn collision_gameplay_logic(
     match (obj1.collision.etype, obj2.collision.etype) {
         (EntityType::Asteroid, EntityType::Asteroid) => (),
         (EntityType::Asteroid, EntityType::Earth) => (),
+        (EntityType::Asteroid, EntityType::Alien) => {
+            let relative_velocity = obj1.velocity - obj2.velocity;
+            let relative_speed_squared = relative_velocity.length_squared();
+
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
+                play_sound(asset_server, audio, "audio/EnemyExplode.mp3");
+                commands.despawn(obj2.entity);
+            } else if collision_sound_cooldown.over(&time) {
+                play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
+                collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
+            }
+        }
         (EntityType::Asteroid, EntityType::Player) => {
             let relative_velocity = obj1.velocity - obj2.velocity;
             let relative_speed_squared = relative_velocity.length_squared();
 
             if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
-                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+                play_sound(asset_server, audio, "audio/SpaceshipCrash2.mp3");
                 commands.despawn(obj2.entity);
                 *game_state = GameState::Lost;
             } else if collision_sound_cooldown.over(&time) {
@@ -171,12 +183,25 @@ fn collision_gameplay_logic(
             println!("YOU WIN!!");
             *game_state = GameState::Won;
         }
+        (EntityType::Bullet, EntityType::Alien) => {
+            let relative_velocity = obj1.velocity - obj2.velocity;
+            let relative_speed_squared = relative_velocity.length_squared();
+
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_BULLET_SQUARED {
+                play_sound(asset_server, audio, "audio/EnemyExplode.mp3");
+                commands.despawn(obj1.entity);
+                commands.despawn(obj2.entity);
+            } else if collision_sound_cooldown.over(&time) {
+                play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
+                collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
+            }
+        }
         (EntityType::Bullet, EntityType::Player) => {
             let relative_velocity = obj1.velocity - obj2.velocity;
             let relative_speed_squared = relative_velocity.length_squared();
 
             if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_BULLET_SQUARED {
-                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+                play_sound(asset_server, audio, "audio/SpaceshipCrash2.mp3");
                 commands.despawn(obj1.entity);
                 commands.despawn(obj2.entity);
                 *game_state = GameState::Lost;
@@ -185,14 +210,16 @@ fn collision_gameplay_logic(
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
             }
         }
-        (EntityType::Bullet, EntityType::Alien) => {
+        (EntityType::Alien, EntityType::Player) => {
             let relative_velocity = obj1.velocity - obj2.velocity;
             let relative_speed_squared = relative_velocity.length_squared();
 
-            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_BULLET_SQUARED {
-                play_sound(asset_server, audio, "audio/SpaceshipCrash.mp3");
+            if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
+                play_sound(asset_server, audio, "audio/SpaceshipCrash2.mp3");
+                play_sound(asset_server, audio, "audio/EnemyExplode.mp3");
                 commands.despawn(obj1.entity);
                 commands.despawn(obj2.entity);
+                *game_state = GameState::Lost;
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
