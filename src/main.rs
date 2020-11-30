@@ -48,8 +48,10 @@ fn main() {
         //
         // Startup
         .add_startup_system(setup)
-        .add_startup_system(setup_audio)
         //.add_startup_system(infotext_system)
+        //
+        // Audio
+        .add_system(play_soundtrack)
         //
         // Input
         .add_system(keyboard_input_update)
