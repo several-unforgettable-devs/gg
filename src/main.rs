@@ -112,6 +112,7 @@ fn skybox_update(
 }
 
 pub const PLAYER_SHIP_RADIUS: f32 = 2.;
+pub const PLAYER_SHIP_MASS: f32 = PLAYER_SHIP_RADIUS * PLAYER_SHIP_RADIUS;
 fn add_ship(commands: &mut Commands, asset_server: &Res<AssetServer>, position: Vec3) {
     let ship_mesh_handle =
         asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Mesh0/Primitive0");
@@ -119,24 +120,22 @@ fn add_ship(commands: &mut Commands, asset_server: &Res<AssetServer>, position: 
     let ship_material_handle =
         asset_server.load("models/ship/player/PlayerShip01_AA.gltf#Material0");
 
-    let ship_scale = 2.;
-
     commands
         .spawn(PbrBundle {
             mesh: ship_mesh_handle,
             material: ship_material_handle,
             transform: Transform {
                 translation: position,
-                scale: Vec3::splat(ship_scale),
+                scale: Vec3::splat(PLAYER_SHIP_RADIUS),
                 ..Default::default()
             },
             ..Default::default()
         })
         .with(PlayerInput)
-        .with(Gravity { mass: 4. })
+        .with(Gravity { mass: PLAYER_SHIP_MASS })
         .with(Collision {
-            mass: 4.,
-            radius: 2.,
+            mass: PLAYER_SHIP_MASS,
+            radius: PLAYER_SHIP_RADIUS,
             etype: EntityType::Player,
         })
         .with(Velocity::default());
@@ -148,7 +147,7 @@ fn add_earth(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     position: Vec3,
 ) {
-    let earth_radius = 4.;
+    let earth_radius = 5.;
     let earth_mass = earth_radius * earth_radius;
     commands
         .spawn(PbrBundle {

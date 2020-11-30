@@ -17,7 +17,7 @@ pub fn add_asteroids(
     let asteroid_max_spawn_distance = 150.0;
     let asteroid_min_radius = 0.9;
     let asteroid_max_radius = 3.0;
-    let asteroid_relative_tangential_speed = 20.0;
+    let asteroid_relative_tangential_speed = 150.0;
 
     let asteroids_per_axis: i32 = (asteroid_max_spawn_distance / asteroid_density) as i32;
     let total_asteroids = asteroids_per_axis.pow(3);
@@ -52,7 +52,10 @@ pub fn add_asteroids(
 
         let asteroid_radius = rng.gen_range(asteroid_min_radius, asteroid_max_radius);
 
-        let asteroid_mass = asteroid_radius * asteroid_radius * 0.1;
+        let asteroid_mass = asteroid_radius * asteroid_radius;
+
+        let asteroid_distance = asteroid_position.length();
+        // let asteroid_max_spawn_distance_squared = asteroid_max_spawn_distance * asteroid_max_spawn_distance;
 
         commands
             .spawn(PbrBundle {
@@ -74,9 +77,8 @@ pub fn add_asteroids(
             })
             .with(Velocity {
                 velocity: asteroid_rotation
-                    * asteroid_position.length()
                     * asteroid_relative_tangential_speed
-                    / asteroid_max_spawn_distance,
+                    / asteroid_distance.sqrt(),
             });
     }
 }
