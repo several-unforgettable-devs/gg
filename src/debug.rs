@@ -112,6 +112,7 @@ pub fn infotext_system(commands: &mut Commands, asset_server: Res<AssetServer>) 
     });
 }
 
+#[allow(dead_code)]
 pub fn change_text_system(mut query: Query<(&mut Text, &TextChanges)>) {
     for (mut text, _text_changes) in query.iter_mut() {
         text.value = format!(

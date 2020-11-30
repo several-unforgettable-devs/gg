@@ -12,7 +12,6 @@ mod collision;
 mod cooldown;
 use crate::collision::*;
 mod debug;
-use debug::{change_text_system, infotext_system};
 mod enemies;
 use crate::enemies::*;
 mod gravity;
@@ -22,6 +21,7 @@ use crate::input::*;
 mod velocity;
 use crate::velocity::*;
 mod trail;
+mod game_messaging;
 mod boid;
 use crate::boid::*;
 
@@ -49,7 +49,7 @@ fn main() {
         // Startup
         .add_startup_system(setup)
         .add_startup_system(setup_audio)
-        .add_startup_system(infotext_system)
+        //.add_startup_system(infotext_system)
         //
         // Input
         .add_system(keyboard_input_update)
@@ -68,6 +68,9 @@ fn main() {
         // 
         // Trail
         .add_plugin(trail::MotionTrailPlugin)
+        // 
+        // Game messaging
+        .add_plugin(game_messaging::GameMessagePlugin)
         .run();
         
 }
