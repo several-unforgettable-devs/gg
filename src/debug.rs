@@ -3,6 +3,7 @@ extern crate rand;
 
 pub struct TextChanges;
 
+#[allow(dead_code)]
 pub fn infotext_system(commands: &mut Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     commands.spawn(UiCameraBundle::default()).spawn(TextBundle {

@@ -46,7 +46,7 @@ fn main() {
         .add_system(boid_update)
         //
         // Visuals/UI
-        .add_system(change_text_system)
+        //.add_system(change_text_system)
         .add_system(skybox_update)
         // 
         // Trail
