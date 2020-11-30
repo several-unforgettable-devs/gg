@@ -6,7 +6,6 @@ use crate::velocity::Velocity;
 pub struct MotionTrailPlugin;
 
 // Settings
-const RESPAWN_RATE:f32 = 0.2;
 const TRAIL_SIZE:f32 = 0.05;
 const MAX_TRAIL_DIST:f32 = 10.0;
 const SPAWN_ANGLE_RADIUS:f32 = std::f32::consts::PI / 2.0;

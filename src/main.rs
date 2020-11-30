@@ -177,7 +177,7 @@ fn setup(
         })
         .with(CameraInput);
 
-    add_ship(commands, asset_server, Vec3::new(-40.0, 0., 0.0));
+    add_ship(commands, asset_server, Vec3::new(0.0, 0.0, 100.0));
 
     add_earth(
         commands,
