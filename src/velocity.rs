@@ -7,6 +7,12 @@ pub struct Velocity {
     pub velocity: Vec3,
 }
 
+impl Velocity {
+    pub fn new(vel: Vec3) -> Velocity {
+        Velocity{ velocity: vel }
+    }
+}
+
 pub fn velocity_update(
     time: Res<Time>,
     game_state: ResMut<crate::GameState>,

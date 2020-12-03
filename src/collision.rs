@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::audio::*;
 use crate::cooldown::*;
 use crate::velocity::*;
+use crate::explosion::ExplosionEvent;
 pub use crate::EntityType;
 use crate::GameState;
 
@@ -37,6 +38,7 @@ pub fn collision_update(
     mut collision_sound_cooldown: Local<Cooldown>,
 
     mut query: Query<(Entity, &Transform, &mut Velocity, &Collision)>,
+    mut expl_events: ResMut<Events<ExplosionEvent>>,
 ) {
     if *game_state != GameState::Running {
         return;
@@ -80,6 +82,7 @@ pub fn collision_update(
                 &mut collision_sound_cooldown,
                 obj1,
                 obj2,
+                &mut expl_events
             );
 
             let distance = distance_squared.sqrt();
@@ -134,6 +137,8 @@ fn collision_gameplay_logic(
 
     obj_a: &CollisionData,
     obj_b: &CollisionData,
+
+    expl_events: &mut ResMut<Events<ExplosionEvent>>,
 ) {
     // Order the objects by collision type to reduce the number of permutations
     let obj1 = if obj_a.collision.etype <= obj_b.collision.etype {
@@ -160,6 +165,7 @@ fn collision_gameplay_logic(
             if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
                 play_sound(asset_server, audio, "audio/EnemyExplode.mp3");
                 commands.despawn(obj2.entity);
+                expl_events.send(ExplosionEvent::new(obj2.position, obj2.velocity));
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
@@ -172,6 +178,7 @@ fn collision_gameplay_logic(
             if relative_speed_squared > LETHAL_RELATIVE_VELOCITY_OF_ASTEROID_SQUARED {
                 play_sound(asset_server, audio, "audio/SpaceshipCrash2.mp3");
                 commands.despawn(obj2.entity);
+                expl_events.send(ExplosionEvent::new(obj2.position, obj2.velocity));
                 *game_state = GameState::Lost;
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
@@ -195,6 +202,7 @@ fn collision_gameplay_logic(
                 play_sound(asset_server, audio, "audio/EnemyExplode.mp3");
                 commands.despawn(obj1.entity);
                 commands.despawn(obj2.entity);
+                expl_events.send(ExplosionEvent::new(obj2.position, obj2.velocity));
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
                 collision_sound_cooldown.reset(&time, ASTEROID_COLLISION_SOUND_DURATION);
@@ -208,6 +216,7 @@ fn collision_gameplay_logic(
                 play_sound(asset_server, audio, "audio/SpaceshipCrash2.mp3");
                 commands.despawn(obj1.entity);
                 commands.despawn(obj2.entity);
+                expl_events.send(ExplosionEvent::new(obj2.position, obj2.velocity));
                 *game_state = GameState::Lost;
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");
@@ -223,6 +232,8 @@ fn collision_gameplay_logic(
                 play_sound(asset_server, audio, "audio/EnemyExplode.mp3");
                 commands.despawn(obj1.entity);
                 commands.despawn(obj2.entity);
+                expl_events.send(ExplosionEvent::new(obj1.position, obj1.velocity));
+                expl_events.send(ExplosionEvent::new(obj2.position, obj2.velocity));
                 *game_state = GameState::Lost;
             } else if collision_sound_cooldown.over(&time) {
                 play_sound(asset_server, audio, "audio/AsteroidCollision.mp3");

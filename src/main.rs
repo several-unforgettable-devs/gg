@@ -23,6 +23,7 @@ use crate::velocity::*;
 mod boid;
 mod game_messaging;
 mod trail;
+mod explosion;
 use crate::boid::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
@@ -74,6 +75,9 @@ fn main() {
         //
         // Game messaging
         .add_plugin(game_messaging::GameMessagePlugin)
+        // 
+        // Explosions
+        .add_plugin(explosion::ExplosionPlugin)
         .run();
 }
 

@@ -14,3 +14,4 @@ opt-level = 3
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy.git", rev = "f69cc6f94c9df675457b56297d582c16b5d37cef" }
 rand = "0.7.3"
+ezing = "0.2.1"
